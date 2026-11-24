@@ -10,17 +10,21 @@ namespace PowerCheck.App;
 
 public partial class MainWindow : Window
 {
+    private static readonly string BuiltInPath = Path.Combine(AppContext.BaseDirectory, "devices.json");
+    private static readonly string MinePath = Path.Combine(AppContext.BaseDirectory, "my-devices.json");
+
     private readonly ObservableCollection<DeviceUse> _items = [];
+    private readonly List<Device> _builtIn;
+    private List<Device> _mine;
     private readonly bool _ready;
 
     public MainWindow()
     {
         InitializeComponent();
 
-        var devices = DeviceLibrary.Load(Path.Combine(AppContext.BaseDirectory, "devices.json"))
-            .OrderBy(d => d.Name).ToList();
-        DevicePicker.ItemsSource = devices;
-        if (devices.Count > 0) DevicePicker.SelectedIndex = 0;
+        _builtIn = DeviceLibrary.Load(BuiltInPath);
+        _mine = DeviceLibrary.Load(MinePath);
+        RefreshPicker(null);
 
         ItemsList.ItemsSource = _items;
         _items.CollectionChanged += (_, _) => Recalculate();
@@ -47,11 +51,82 @@ public partial class MainWindow : Window
     };
 
     // ---- Inputs ----
+    private bool IsMine(Device d) => _mine.Any(m => m.Name.Equals(d.Name, StringComparison.OrdinalIgnoreCase));
+
+    private bool IsBuiltIn(string name) => _builtIn.Any(b => b.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+
+    private void RefreshPicker(string? select)
+    {
+        var all = DeviceLibrary.Merge(_builtIn, _mine);
+        DevicePicker.ItemsSource = all;
+        DevicePicker.SelectedItem = all.FirstOrDefault(d => d.Name.Equals(select ?? "", StringComparison.OrdinalIgnoreCase))
+                                    ?? all.FirstOrDefault();
+    }
+
     private void DevicePicker_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        DeviceNote.Text = DevicePicker.SelectedItem is Device d
-            ? $"Typical: {d.Watts:0} W ({d.Amps:0.0} A). {d.Note}"
-            : "";
+        if (DevicePicker.SelectedItem is not Device d)
+        {
+            DeviceNote.Text = "";
+            DeleteDeviceButton.IsEnabled = false;
+            return;
+        }
+        string source = !IsMine(d) ? "" : IsBuiltIn(d.Name) ? " (your edited copy)" : " (your device)";
+        DeviceNote.Text = $"{d.Watts:0} W ({d.Amps:0.0} A){source}. {d.Note}".TrimEnd();
+        DeleteDeviceButton.IsEnabled = IsMine(d);
+        DeleteDeviceButton.Content = IsMine(d) && IsBuiltIn(d.Name) ? "Undo my edit" : "Delete";
+        DeleteDeviceButton.ToolTip = IsMine(d) ? null : "Built-in devices can be edited but not deleted.";
+    }
+
+    private void SaveMine()
+    {
+        try { DeviceLibrary.Save(MinePath, _mine); }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, $"Couldn't save your devices to {MinePath}.\n\n{ex.Message}", "PowerCheck");
+        }
+    }
+
+    private void NewDevice_Click(object sender, RoutedEventArgs e) => OpenEditor(null);
+
+    private void EditDevice_Click(object sender, RoutedEventArgs e)
+    {
+        if (DevicePicker.SelectedItem is Device d) OpenEditor(d);
+    }
+
+    private void OpenEditor(Device? device)
+    {
+        var categories = DeviceLibrary.Merge(_builtIn, _mine).Select(d => d.Category);
+        var editor = new DeviceEditor(device, categories) { Owner = this };
+        if (editor.ShowDialog() != true || editor.Result is null) return;
+
+        var result = editor.Result;
+        // Renaming a built-in device keeps the built-in one and adds yours.
+        string? oldName = device is not null && IsMine(device) ? device.Name : null;
+        _mine = DeviceLibrary.Upsert(_mine, result, oldName);
+        SaveMine();
+
+        // Update anything already in the list that used the old version.
+        if (device is not null)
+            for (int i = 0; i < _items.Count; i++)
+                if (_items[i].Device.Name.Equals(device.Name, StringComparison.OrdinalIgnoreCase))
+                    _items[i] = _items[i] with { Device = result };
+
+        RefreshPicker(result.Name);
+    }
+
+    private void DeleteDevice_Click(object sender, RoutedEventArgs e)
+    {
+        if (DevicePicker.SelectedItem is not Device d || !IsMine(d)) return;
+        bool builtIn = IsBuiltIn(d.Name);
+        string question = builtIn
+            ? $"Go back to the built-in values for \"{d.Name}\"?"
+            : $"Delete \"{d.Name}\" from your devices?";
+        if (MessageBox.Show(this, question, "PowerCheck", MessageBoxButton.YesNo) != MessageBoxResult.Yes) return;
+
+        _mine = _mine.Where(m => !m.Name.Equals(d.Name, StringComparison.OrdinalIgnoreCase)).ToList();
+        SaveMine();
+        RefreshPicker(builtIn ? d.Name : null);
     }
 
     private void AddDevice_Click(object sender, RoutedEventArgs e)

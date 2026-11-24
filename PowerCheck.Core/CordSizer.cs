@@ -114,8 +114,10 @@ public static class CordSizer
         if (list.Any(u => u.Device.Motor))
             notes.Add("Motors (saws, compressors, vacuums) pull extra power for a moment when they start. A thicker cord helps them start easily.");
 
-        return Build(Electric.WattsToAmps(watts), lengthFeet, outdoor, continuous, notes,
+        var report = Build(Electric.WattsToAmps(watts), lengthFeet, outdoor, continuous, notes,
             forceRed: list.Any(u => u.Device.WallOnly));
+        notes.AddRange(ConnectionAdvice.For(list.Sum(u => u.Quantity), report.Amps, outdoor));
+        return report;
     }
 
     public static CordReport Size(double amps, int lengthFeet, bool outdoor, bool continuous) =>

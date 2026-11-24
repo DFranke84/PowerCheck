@@ -20,4 +20,26 @@ public static class DeviceLibrary
 
     public static void Save(string path, IEnumerable<Device> devices) =>
         File.WriteAllText(path, JsonSerializer.Serialize(devices.ToList(), Options));
+
+    /// <summary>
+    /// Built-in devices plus your own. Your own device with the same name as a
+    /// built-in one replaces it (that's how editing a built-in device works).
+    /// </summary>
+    public static List<Device> Merge(IEnumerable<Device> builtIn, IEnumerable<Device> mine)
+    {
+        var byName = new Dictionary<string, Device>(StringComparer.OrdinalIgnoreCase);
+        foreach (var d in builtIn) byName[d.Name.Trim()] = d;
+        foreach (var d in mine) byName[d.Name.Trim()] = d;
+        return byName.Values.OrderBy(d => d.Name, StringComparer.CurrentCultureIgnoreCase).ToList();
+    }
+
+    /// <summary>Adds or replaces a device by name in the user's list.</summary>
+    public static List<Device> Upsert(IEnumerable<Device> mine, Device device, string? oldName = null)
+    {
+        var list = mine.Where(d =>
+            !d.Name.Equals(device.Name, StringComparison.OrdinalIgnoreCase) &&
+            (oldName is null || !d.Name.Equals(oldName, StringComparison.OrdinalIgnoreCase))).ToList();
+        list.Add(device);
+        return list;
+    }
 }

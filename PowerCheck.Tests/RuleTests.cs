@@ -136,6 +136,35 @@ public class RuleTests
     }
 
     [Fact]
+    public void Your_device_replaces_built_in_one_with_same_name()
+    {
+        var mine = new Device { Name = "space heater", Watts = 750, Continuous = true };
+        var merged = DeviceLibrary.Merge([Heater, ShopVac], [mine]);
+        Assert.Equal(2, merged.Count);
+        Assert.Equal(750, merged.Single(d => d.Name.Equals("space heater", StringComparison.OrdinalIgnoreCase)).Watts);
+    }
+
+    [Fact]
+    public void Renaming_your_device_does_not_leave_the_old_one()
+    {
+        var list = DeviceLibrary.Upsert([Maintainer], Maintainer with { Name = "ATV maintainer" }, oldName: "Battery maintainer");
+        Assert.Single(list);
+        Assert.Equal("ATV maintainer", list[0].Name);
+    }
+
+    [Fact]
+    public void Several_plugs_get_connection_advice_one_plug_does_not()
+    {
+        var one = CordSizer.Size([new DeviceUse(Maintainer)], 25, outdoor: true);
+        Assert.DoesNotContain(one.Notes, n => n.StartsWith("How to connect"));
+
+        var garage = CordSizer.Size([new DeviceUse(Maintainer, 3), new DeviceUse(PetBed)], 25, outdoor: true);
+        Assert.Contains(garage.Notes, n => n.StartsWith("How to connect 4 plugs"));
+        Assert.Contains(garage.Notes, n => n.Contains("power strip into an extension cord"));
+        Assert.Contains(garage.Notes, n => n.Contains("off the floor"));
+    }
+
+    [Fact]
     public void Shipped_device_list_loads()
     {
         var list = DeviceLibrary.Load(Path.Combine(AppContext.BaseDirectory, "devices.json"));
