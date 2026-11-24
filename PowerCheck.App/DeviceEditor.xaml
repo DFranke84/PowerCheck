@@ -34,8 +34,39 @@
         <CheckBox x:Name="WallOnlyBox" Content="Manual says plug straight into a wall outlet" Margin="0,0,0,12"/>
 
         <TextBlock Text="Note (optional)"/>
-        <TextBox x:Name="NoteBox" Margin="0,4,0,16" Height="54" TextWrapping="Wrap" AcceptsReturn="True"
+        <TextBox x:Name="NoteBox" Margin="0,4,0,12" Height="54" TextWrapping="Wrap" AcceptsReturn="True"
                  VerticalScrollBarVisibility="Auto"/>
+
+        <TextBlock Text="Picture (optional)"/>
+        <Grid Margin="0,4,0,12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="96"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Border Width="86" Height="86" Background="#EEF1F4" BorderBrush="#D8DCE2" BorderThickness="1"
+                    HorizontalAlignment="Left">
+                <Grid>
+                    <TextBlock x:Name="NoPictureText" Text="No picture" Foreground="#7A828C" FontSize="12"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    <Image x:Name="PicturePreview" Stretch="Uniform"/>
+                </Grid>
+            </Border>
+            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                <StackPanel Orientation="Horizontal">
+                    <Button Content="Choose file..." Padding="10,3" Margin="0,0,6,0" Click="ChoosePicture_Click"/>
+                    <Button Content="Paste" Padding="10,3" Margin="0,0,6,0" Click="PastePicture_Click"
+                            ToolTip="Paste a picture you copied (for example, right-click a product photo, Copy image)"/>
+                    <Button Content="Remove" Padding="10,3" Click="RemovePicture_Click"/>
+                </StackPanel>
+                <TextBlock Foreground="#5F6670" FontSize="12.5" TextWrapping="Wrap" Margin="0,6,0,0"
+                           Text="A photo of the device or its label. It is copied into the app's device-images folder."/>
+            </StackPanel>
+        </Grid>
+
+        <TextBlock Text="Product link (optional)"/>
+        <TextBox x:Name="LinkBox" Margin="0,4,0,2"/>
+        <TextBlock Foreground="#5F6670" FontSize="12.5" TextWrapping="Wrap" Margin="0,0,0,16"
+                   Text="Paste the web address of the product page. Leave blank to get an Amazon search for the name."/>
 
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
             <Button Content="Save" IsDefault="True" Padding="16,4" Margin="0,0,8,0" Click="Save_Click"/>

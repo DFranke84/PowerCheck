@@ -4,3 +4,4 @@ obj/
 *.user
 publish/
 my-devices.json
+device-images/

@@ -165,10 +165,27 @@ public class RuleTests
     }
 
     [Fact]
+    public void Shop_link_is_amazon_search_unless_you_give_a_web_link()
+    {
+        Assert.Equal("https://www.amazon.com/s?k=Space%20heater", Heater.ShopUrl);
+        Assert.False(Heater.HasOwnLink);
+
+        var mine = Heater with { Link = "https://example.com/heater" };
+        Assert.Equal("https://example.com/heater", mine.ShopUrl);
+        Assert.True(mine.HasOwnLink);
+
+        // Anything that isn't a web link falls back to the search.
+        Assert.False((Heater with { Link = "file:///C:/Windows/notepad.exe" }).HasOwnLink);
+    }
+
+    [Fact]
     public void Shipped_device_list_loads()
     {
         var list = DeviceLibrary.Load(Path.Combine(AppContext.BaseDirectory, "devices.json"));
-        Assert.NotEmpty(list);
-        Assert.All(list, d => Assert.True(d.Watts > 0));
+        Assert.True(list.Count >= 50);
+        Assert.All(list, d => Assert.InRange(d.Watts, 1, 2400));
+        Assert.All(list, d => Assert.False(string.IsNullOrWhiteSpace(d.Note)));
+        Assert.Equal(list.Count, list.Select(d => d.Name.ToLowerInvariant()).Distinct().Count());
+        Assert.True(list.Select(d => d.Category).Distinct().Count() <= 9);
     }
 }

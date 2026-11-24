@@ -28,8 +28,8 @@
                        Text="This is a guide, not a substitute for the device's manual. When in doubt, ask an electrician. Assumes US 120 V outlets and copper cords."/>
         </Border>
 
-        <TabControl Margin="10" Padding="0">
-            <TabItem Header="  Extension cord  ">
+        <TabControl x:Name="Tabs" Margin="10" Padding="0">
+            <TabItem x:Name="CordTab" Header="  Extension cord  ">
                 <Grid Margin="14">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="5*" MinWidth="480"/>
@@ -180,6 +180,100 @@
                         </StackPanel>
                     </ScrollViewer>
                 </Grid>
+            </TabItem>
+            <TabItem x:Name="DevicesTab" Header="  Devices  ">
+                <DockPanel Margin="14">
+                    <Grid DockPanel.Dock="Top" Margin="0,0,0,10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="220"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="200"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Search:" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <TextBox x:Name="DeviceSearch" Grid.Column="1" VerticalContentAlignment="Center"
+                                 TextChanged="DeviceFilter_Changed"/>
+                        <TextBlock Grid.Column="2" Text="Group:" VerticalAlignment="Center" Margin="16,0,6,0"/>
+                        <ComboBox x:Name="GroupFilter" Grid.Column="3" SelectionChanged="DeviceFilter_Changed"/>
+                        <TextBlock x:Name="DeviceCount" Grid.Column="4" VerticalAlignment="Center" Margin="16,0,0,0"
+                                   Style="{StaticResource Hint}"/>
+                        <StackPanel Grid.Column="5" Orientation="Horizontal">
+                            <Button Content="Use on cord" Click="UseOnCord_Click" Margin="0,0,6,0"
+                                    ToolTip="Add the selected device to the Extension cord tab"/>
+                            <Button Content="New device..." Click="NewDevice_Click" Margin="0,0,6,0"/>
+                            <Button Content="Edit..." Click="ListEdit_Click" Margin="0,0,6,0"/>
+                            <Button x:Name="ListDeleteButton" Content="Delete" Click="ListDelete_Click"/>
+                        </StackPanel>
+                    </Grid>
+                    <TextBlock DockPanel.Dock="Bottom" Style="{StaticResource Hint}" Margin="0,8,0,0"
+                               Text="Double-click a device to edit it. Click a picture to see it bigger. Watts are typical values: your device's label is always the real answer."/>
+
+                    <ListView x:Name="DeviceTable" BorderBrush="#D8DCE2"
+                              SelectionChanged="DeviceTable_SelectionChanged"
+                              MouseDoubleClick="DeviceTable_MouseDoubleClick">
+                        <ListView.ItemContainerStyle>
+                            <Style TargetType="ListViewItem">
+                                <Setter Property="VerticalContentAlignment" Value="Top"/>
+                                <Setter Property="Padding" Value="2,4"/>
+                            </Style>
+                        </ListView.ItemContainerStyle>
+                        <ListView.View>
+                            <GridView>
+                                <GridViewColumn Header="Picture" Width="78">
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button Click="Thumb_Click" Tag="{Binding}" Width="60" Height="60" Padding="0"
+                                                    MinWidth="0" Background="#EEF1F4" BorderBrush="#D8DCE2" Cursor="Hand"
+                                                    ToolTip="{Binding ThumbTip}">
+                                                <Grid>
+                                                    <TextBlock Text="{Binding Icon}" FontSize="26" Foreground="#7A828C"
+                                                               FontFamily="Segoe UI Symbol"
+                                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    <Image Source="{Binding Thumb}" Stretch="UniformToFill"/>
+                                                </Grid>
+                                            </Button>
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                                <GridViewColumn Header="Device" Width="330">
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Width="315">
+                                                <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                                                <TextBlock Text="{Binding Note}" Style="{StaticResource Hint}" Margin="0,2,0,0"/>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                                <GridViewColumn Header="Group" Width="150" DisplayMemberBinding="{Binding Category}"/>
+                                <GridViewColumn Header="Watts" Width="65" DisplayMemberBinding="{Binding Watts, StringFormat={}{0:0}}"/>
+                                <GridViewColumn Header="Amps" Width="60" DisplayMemberBinding="{Binding Amps, StringFormat={}{0:0.0}}"/>
+                                <GridViewColumn Header="Good to know" Width="150">
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding Flags}" TextWrapping="Wrap" Width="140" FontSize="12.5"/>
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                                <GridViewColumn Header="From" Width="70" DisplayMemberBinding="{Binding Source}"/>
+                                <GridViewColumn Header="Shop" Width="110">
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock>
+                                                <Hyperlink NavigateUri="{Binding Url}" RequestNavigate="ShopLink_RequestNavigate"
+                                                           ToolTip="{Binding Url}">
+                                                    <Run Text="{Binding LinkText, Mode=OneWay}"/>
+                                                </Hyperlink>
+                                            </TextBlock>
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                            </GridView>
+                        </ListView.View>
+                    </ListView>
+                </DockPanel>
             </TabItem>
             <TabItem Header="  Power strip / circuit (next)  " IsEnabled="False"/>
             <TabItem Header="  Learn (next)  " IsEnabled="False"/>

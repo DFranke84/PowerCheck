@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace PowerCheck.Core;
 
 /// <summary>Something you plug in, with what it typically draws.</summary>
@@ -22,7 +24,24 @@ public sealed record Device
     /// <summary>Short plain-language note shown with the device.</summary>
     public string Note { get; init; } = "";
 
+    /// <summary>Picture file name inside the device-images folder (optional).</summary>
+    public string? Image { get; init; }
+
+    /// <summary>Product page link (optional). Blank means an Amazon search for the name.</summary>
+    public string? Link { get; init; }
+
+    [JsonIgnore]
     public double Amps => Electric.WattsToAmps(Watts);
+
+    /// <summary>The link to open: your own http(s) link, or an Amazon search for the device.</summary>
+    [JsonIgnore]
+    public string ShopUrl =>
+        Uri.TryCreate(Link?.Trim(), UriKind.Absolute, out var u) && (u.Scheme == Uri.UriSchemeHttps || u.Scheme == Uri.UriSchemeHttp)
+            ? u.AbsoluteUri
+            : "https://www.amazon.com/s?k=" + Uri.EscapeDataString(Name);
+
+    [JsonIgnore]
+    public bool HasOwnLink => !ShopUrl.StartsWith("https://www.amazon.com/s?k=", StringComparison.Ordinal);
 
     public override string ToString() => $"{Name} ({Watts:0} W)";
 }
