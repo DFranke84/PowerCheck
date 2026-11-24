@@ -1,0 +1,38 @@
+[
+  {
+    "name": "Space heater",
+    "watts": 1500,
+    "category": "Heating",
+    "continuous": true,
+    "wallOnly": true,
+    "note": "Pulls the most of anything in the house. Give it its own wall outlet."
+  },
+  {
+    "name": "Shop vac",
+    "watts": 1560,
+    "category": "Tools",
+    "motor": true,
+    "note": "Label usually says 12-13 A. Short bursts, but a big starting pull."
+  },
+  {
+    "name": "Battery maintainer (trickle charger)",
+    "watts": 25,
+    "category": "Chargers",
+    "continuous": true,
+    "note": "About 0.75-1.5 A on the battery side, but only about 0.2-0.4 A from the wall. Bigger 10 A chargers pull much more."
+  },
+  {
+    "name": "Heated pet bed",
+    "watts": 40,
+    "category": "Heating",
+    "continuous": true,
+    "note": "Small ones use 4-6 W; outdoor pads up to about 40-60 W."
+  },
+  {
+    "name": "LED Christmas lights (100-bulb string)",
+    "watts": 6,
+    "category": "Lights",
+    "continuous": true,
+    "note": "Check the tag for how many strings can be connected end to end."
+  }
+]

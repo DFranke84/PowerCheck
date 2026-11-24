@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="PowerCheck.App/PowerCheck.App.csproj" />
+  <Project Path="PowerCheck.Core/PowerCheck.Core.csproj" />
+  <Project Path="PowerCheck.Tests/PowerCheck.Tests.csproj" />
+</Solution>

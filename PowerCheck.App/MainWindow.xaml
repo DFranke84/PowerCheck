@@ -1,0 +1,183 @@
+﻿<Window x:Class="PowerCheck.App.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="PowerCheck" Height="680" Width="1060" MinHeight="560" MinWidth="900"
+        WindowStartupLocation="CenterScreen" Background="#F4F5F7"
+        FontFamily="Segoe UI" FontSize="14">
+    <Window.Resources>
+        <Style TargetType="GroupBox">
+            <Setter Property="Padding" Value="10"/>
+            <Setter Property="Margin" Value="0,0,0,12"/>
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="#D8DCE2"/>
+        </Style>
+        <Style TargetType="Button">
+            <Setter Property="Padding" Value="12,4"/>
+            <Setter Property="MinWidth" Value="70"/>
+        </Style>
+        <Style x:Key="Hint" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#5F6670"/>
+            <Setter Property="FontSize" Value="12.5"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+        </Style>
+    </Window.Resources>
+
+    <DockPanel>
+        <Border DockPanel.Dock="Bottom" Background="#E9ECF0" Padding="14,6">
+            <TextBlock Style="{StaticResource Hint}"
+                       Text="This is a guide, not a substitute for the device's manual. When in doubt, ask an electrician. Assumes US 120 V outlets and copper cords."/>
+        </Border>
+
+        <TabControl Margin="10" Padding="0">
+            <TabItem Header="  Extension cord  ">
+                <Grid Margin="14">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="400"/>
+                        <ColumnDefinition Width="16"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Left: inputs -->
+                    <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto">
+                        <StackPanel>
+                            <GroupBox Header="1. What will you plug in?">
+                                <StackPanel>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <ComboBox x:Name="DevicePicker" DisplayMemberPath="Name"
+                                                  SelectionChanged="DevicePicker_SelectionChanged"/>
+                                        <TextBox x:Name="QtyBox" Grid.Column="1" Width="40" Margin="6,0"
+                                                 Text="1" TextAlignment="Center" VerticalContentAlignment="Center"
+                                                 ToolTip="How many"/>
+                                        <Button Grid.Column="2" Content="Add" Click="AddDevice_Click"/>
+                                    </Grid>
+                                    <TextBlock x:Name="DeviceNote" Style="{StaticResource Hint}" Margin="0,6,0,0"/>
+
+                                    <TextBlock Text="Or type what the label says:" Margin="0,12,0,4"/>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="70"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBox x:Name="LabelValue" VerticalContentAlignment="Center"/>
+                                        <ComboBox x:Name="LabelUnit" Grid.Column="1" Margin="6,0" Width="70" SelectedIndex="0">
+                                            <ComboBoxItem Content="watts"/>
+                                            <ComboBoxItem Content="amps"/>
+                                            <ComboBoxItem Content="VA"/>
+                                        </ComboBox>
+                                        <CheckBox x:Name="LabelContinuous" Grid.Column="2" Content="Runs for hours"
+                                                  VerticalAlignment="Center"/>
+                                        <Button Grid.Column="3" Content="Add" Click="AddLabel_Click"/>
+                                    </Grid>
+                                    <TextBlock Style="{StaticResource Hint}" Margin="0,4,0,0"
+                                               Text="Labels show W (watts), A (amps) or VA. Treat VA like watts. Amps × 120 = watts."/>
+
+                                    <ListView x:Name="ItemsList" Margin="0,12,0,0" MinHeight="90" MaxHeight="190"
+                                              BorderBrush="#D8DCE2">
+                                        <ListView.View>
+                                            <GridView>
+                                                <GridViewColumn Header="Device" Width="190" DisplayMemberBinding="{Binding Device.Name}"/>
+                                                <GridViewColumn Header="Qty" Width="40" DisplayMemberBinding="{Binding Quantity}"/>
+                                                <GridViewColumn Header="Watts" Width="60" DisplayMemberBinding="{Binding Watts, StringFormat={}{0:0}}"/>
+                                                <GridViewColumn Width="60">
+                                                    <GridViewColumn.CellTemplate>
+                                                        <DataTemplate>
+                                                            <Button Content="Remove" MinWidth="0" Padding="6,0" FontSize="12"
+                                                                    Click="RemoveItem_Click" Tag="{Binding}"/>
+                                                        </DataTemplate>
+                                                    </GridViewColumn.CellTemplate>
+                                                </GridViewColumn>
+                                            </GridView>
+                                        </ListView.View>
+                                    </ListView>
+                                    <TextBlock x:Name="TotalText" FontWeight="SemiBold" Margin="0,6,0,0"/>
+                                </StackPanel>
+                            </GroupBox>
+
+                            <GroupBox Header="2. How long a cord?">
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal">
+                                        <RadioButton x:Name="Len25" Content="25 ft" Margin="0,0,14,0" Checked="Input_Changed"/>
+                                        <RadioButton x:Name="Len50" Content="50 ft" Margin="0,0,14,0" IsChecked="True" Checked="Input_Changed"/>
+                                        <RadioButton x:Name="Len100" Content="100 ft" Margin="0,0,14,0" Checked="Input_Changed"/>
+                                        <RadioButton x:Name="LenCustom" Content="Other:" Checked="Input_Changed"/>
+                                        <TextBox x:Name="LenCustomBox" Width="50" Margin="6,0,4,0" Text="75"
+                                                 TextChanged="Input_Changed"/>
+                                        <TextBlock Text="ft" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                    <TextBlock Style="{StaticResource Hint}" Margin="0,6,0,0"
+                                               Text="Two cords plugged together count as their total length."/>
+                                </StackPanel>
+                            </GroupBox>
+
+                            <GroupBox Header="3. Where?">
+                                <StackPanel Orientation="Horizontal">
+                                    <RadioButton x:Name="Indoor" Content="Indoors" Margin="0,0,20,0" IsChecked="True" Checked="Input_Changed"/>
+                                    <RadioButton x:Name="Outdoor" Content="Outdoors / garage / damp" Checked="Input_Changed"/>
+                                </StackPanel>
+                            </GroupBox>
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <!-- Right: answer -->
+                    <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto">
+                        <StackPanel>
+                            <Border x:Name="Banner" CornerRadius="6" Padding="16,12" Margin="0,0,0,12">
+                                <StackPanel>
+                                    <TextBlock x:Name="BannerTitle" FontSize="20" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                                    <TextBlock x:Name="BannerDetail" Margin="0,4,0,0" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </Border>
+
+                            <GroupBox Header="Every cord size, checked">
+                                <ItemsControl x:Name="GaugeRows">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border BorderBrush="#E3E6EA" BorderThickness="0,0,0,1" Padding="0,7">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="26"/>
+                                                        <ColumnDefinition Width="90"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="150"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <Ellipse Width="16" Height="16" Fill="{Binding Brush}" VerticalAlignment="Top" Margin="0,2,0,0"/>
+                                                    <TextBlock Grid.Column="1" Text="{Binding Gauge}" FontWeight="SemiBold"/>
+                                                    <TextBlock Grid.Column="2" Text="{Binding Reason}" TextWrapping="Wrap" Margin="0,0,10,0"/>
+                                                    <TextBlock Grid.Column="3" Text="{Binding Lengths}" Foreground="#5F6670" TextWrapping="Wrap"/>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </GroupBox>
+
+                            <GroupBox Header="Good to know">
+                                <ItemsControl x:Name="NotesList">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <BulletDecorator Margin="0,0,0,6">
+                                                <BulletDecorator.Bullet>
+                                                    <TextBlock Text="•  " FontWeight="Bold"/>
+                                                </BulletDecorator.Bullet>
+                                                <TextBlock Text="{Binding}" TextWrapping="Wrap"/>
+                                            </BulletDecorator>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </GroupBox>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+            </TabItem>
+            <TabItem Header="  Power strip / circuit (next)  " IsEnabled="False"/>
+            <TabItem Header="  Learn (next)  " IsEnabled="False"/>
+        </TabControl>
+    </DockPanel>
+</Window>
