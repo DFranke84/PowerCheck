@@ -205,6 +205,25 @@ public partial class MainWindow
         else _loadRows.Add(new LoadRow(d, qty));
     }
 
+    /// <summary>Adds a one-off device from the numbers on its label (not saved to the list).</summary>
+    private void LoadLabelAdd_Click(object sender, RoutedEventArgs e)
+    {
+        if (!double.TryParse(LoadLabelValue.Text, NumberStyles.Float, CultureInfo.CurrentCulture, out var value) || value <= 0)
+        {
+            MessageBox.Show(this, "Type the number from the label, for example 1500 or 12.5.", "PowerCheck");
+            return;
+        }
+        bool isAmps = LoadLabelUnit.SelectedIndex == 1;
+        string unit = isAmps ? "A" : LoadLabelUnit.SelectedIndex == 2 ? "VA" : "W";
+        _loadRows.Add(new LoadRow(new Device
+        {
+            Name = $"Label: {value:0.##} {unit}",
+            Watts = isAmps ? Electric.AmpsToWatts(value) : value,
+            Continuous = LoadLabelContinuous.IsChecked == true,
+        }, 1));
+        LoadLabelValue.Clear();
+    }
+
     private void LoadRemove_Click(object sender, RoutedEventArgs e)
     {
         if ((sender as FrameworkElement)?.Tag is LoadRow r) _loadRows.Remove(r);

@@ -321,6 +321,29 @@
                                         <Button Grid.Column="2" Content="Add" Click="LoadAdd_Click"/>
                                     </Grid>
 
+                                    <TextBlock Text="Not in the list? Type what its label says:" Margin="0,12,0,4"/>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="70"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBox x:Name="LoadLabelValue" VerticalContentAlignment="Center"/>
+                                        <ComboBox x:Name="LoadLabelUnit" Grid.Column="1" Margin="6,0" Width="70" SelectedIndex="0">
+                                            <ComboBoxItem Content="watts"/>
+                                            <ComboBoxItem Content="amps"/>
+                                            <ComboBoxItem Content="VA"/>
+                                        </ComboBox>
+                                        <CheckBox x:Name="LoadLabelContinuous" Grid.Column="2" Content="Runs for hours" VerticalAlignment="Center"/>
+                                        <Button Grid.Column="3" Content="Add" Click="LoadLabelAdd_Click"/>
+                                    </Grid>
+                                    <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                                        <TextBlock Style="{StaticResource Hint}" VerticalAlignment="Center" Margin="0,0,6,0"
+                                                   Text="Use it often? Save it to your list:"/>
+                                        <Button Content="New device..." Click="NewDevice_Click" MinWidth="0" Padding="8,2"/>
+                                    </StackPanel>
+
                                     <ListView x:Name="LoadItems" Margin="0,10,0,0" MinHeight="120" MaxHeight="300" BorderBrush="#D8DCE2">
                                         <ListView.View>
                                             <GridView>

@@ -59,7 +59,7 @@ public partial class MainWindow : Window
         RefreshPicker(device?.Name);
         RefreshDevicesTab(device?.Name);
         UpdateLoadRows(oldName, device);
-        RefreshLoadPicker(null);
+        RefreshLoadPicker(device?.Name);
     }
 
     private void RefreshPicker(string? select)
