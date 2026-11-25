@@ -82,6 +82,32 @@ public class RuleTests
     }
 
     [Fact]
+    public void Each_source_gets_its_own_tip()
+    {
+        DeviceUse[] two = [new(Maintainer, 2)];
+        Assert.Contains(LoadChecker.Check(two, PowerSource.PowerStrip).Notes, n => n.Contains("straight into a wall outlet"));
+        Assert.Contains(LoadChecker.Check(two, PowerSource.Circuit15).Notes, n => n.Contains("same breaker"));
+        Assert.Contains(LoadChecker.Check(two, PowerSource.Cord(CordGauge.All[0])).Notes, n => n.Contains("power block"));
+        Assert.Contains(LoadChecker.Check([new(Maintainer, 8)], PowerSource.PowerStrip).Notes, n => n.Contains("8 plugs"));
+    }
+
+    [Fact]
+    public void Busy_workshop_circuit_warns_about_motor_starts()
+    {
+        var saw = new Device { Name = "Miter saw", Watts = 1800, Motor = true };
+        var r = LoadChecker.Check([new(saw), new(ShopVac)], PowerSource.Circuit20);
+        Assert.Equal(Verdict.Red, r.Verdict);
+        Assert.Contains(r.Notes, n => n.Contains("one at a time"));
+    }
+
+    [Fact]
+    public void Cord_source_is_capped_at_the_15A_plug()
+    {
+        Assert.Equal(15, PowerSource.Cord(CordGauge.All.Single(g => g.Awg == 12)).Amps);
+        Assert.Equal(13, PowerSource.Cord(CordGauge.All.Single(g => g.Awg == 16)).Amps);
+    }
+
+    [Fact]
     public void Garage_chargers_and_pet_bed_are_green_on_16_gauge_50ft()
     {
         DeviceUse[] garage = [new(Maintainer, 4), new(PetBed)];

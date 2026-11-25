@@ -21,6 +21,7 @@ public partial class MainWindow : Window
         _store.Changed += Store_Changed;
         RefreshPicker(null);
         InitDevicesTab();
+        InitLoadTab();
 
         ItemsList.ItemsSource = _items;
         _items.CollectionChanged += (_, _) => Recalculate();
@@ -57,6 +58,8 @@ public partial class MainWindow : Window
 
         RefreshPicker(device?.Name);
         RefreshDevicesTab(device?.Name);
+        UpdateLoadRows(oldName, device);
+        RefreshLoadPicker(null);
     }
 
     private void RefreshPicker(string? select)

@@ -186,6 +186,190 @@
                     </ScrollViewer>
                 </Grid>
             </TabItem>
+            <TabItem x:Name="LoadTab" Header="  Power strip / circuit  ">
+                <Grid Margin="14">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="5*" MinWidth="480"/>
+                        <ColumnDefinition Width="16"/>
+                        <ColumnDefinition Width="6*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Left: inputs -->
+                    <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto">
+                        <StackPanel>
+                            <GroupBox Header="Start from an example (optional)">
+                                <WrapPanel>
+                                    <Button Content="Garage chargers" Click="ExampleGarage_Click" Margin="0,0,6,4"
+                                            ToolTip="DeWalt and Black+Decker maintainers plus the heated pet bed on one power strip"/>
+                                    <Button Content="DeWalt workshop" Click="ExampleWorkshop_Click" Margin="0,0,6,4"
+                                            ToolTip="Miter saw, shop vac, fast charger and work light on one 15 A circuit"/>
+                                    <Button Content="Christmas lights" Click="ExampleLights_Click" Margin="0,0,6,4"
+                                            ToolTip="Opens the lights helper with 4 big C9 strings on 100 ft"/>
+                                    <Button Content="Clear" Click="LoadClear_Click" Margin="0,0,0,4"/>
+                                </WrapPanel>
+                            </GroupBox>
+
+                            <GroupBox Header="1. What is everything plugged into?">
+                                <StackPanel>
+                                    <RadioButton x:Name="SrcStrip" Content="A power strip (15 A)" IsChecked="True" Checked="Load_Changed" Margin="0,0,0,4"/>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                        <RadioButton x:Name="SrcCord" Content="An extension cord:" Checked="Load_Changed" VerticalAlignment="Center"/>
+                                        <ComboBox x:Name="SrcCordGauge" Width="120" Margin="8,0,0,0" SelectionChanged="Load_Changed"/>
+                                    </StackPanel>
+                                    <RadioButton x:Name="SrcCircuit15" Content="A wall circuit with a 15 A breaker (most outlets)" Checked="Load_Changed" Margin="0,0,0,4"/>
+                                    <RadioButton x:Name="SrcCircuit20" Content="A wall circuit with a 20 A breaker (kitchen, garage, shop)" Checked="Load_Changed"/>
+                                    <TextBlock Style="{StaticResource Hint}" Margin="0,6,0,0"
+                                               Text="The breaker's number is printed on its switch in the breaker panel."/>
+                                </StackPanel>
+                            </GroupBox>
+
+                            <GroupBox Header="2. What's plugged in?">
+                                <StackPanel>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <ComboBox x:Name="LoadPicker" ItemTemplate="{StaticResource DevicePickerItem}"/>
+                                        <TextBox x:Name="LoadQty" Grid.Column="1" Width="40" Margin="6,0" Text="1"
+                                                 TextAlignment="Center" VerticalContentAlignment="Center" ToolTip="How many"/>
+                                        <Button Grid.Column="2" Content="Add" Click="LoadAdd_Click"/>
+                                    </Grid>
+                                    <TextBlock Style="{StaticResource Hint}" Margin="0,4,0,0"
+                                               Text="Starred favorites are at the top of the list. Untick &quot;On together&quot; for things that never run at the same time."/>
+
+                                    <ListView x:Name="LoadItems" Margin="0,10,0,0" MinHeight="150" MaxHeight="320" BorderBrush="#D8DCE2">
+                                        <ListView.View>
+                                            <GridView>
+                                                <GridViewColumn Header="Device" Width="230" DisplayMemberBinding="{Binding Device.Name}"/>
+                                                <GridViewColumn Header="Qty" Width="52">
+                                                    <GridViewColumn.CellTemplate>
+                                                        <DataTemplate>
+                                                            <TextBox Text="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}" Width="36"
+                                                                     TextAlignment="Center"/>
+                                                        </DataTemplate>
+                                                    </GridViewColumn.CellTemplate>
+                                                </GridViewColumn>
+                                                <GridViewColumn Header="Watts" Width="62" DisplayMemberBinding="{Binding Watts, StringFormat={}{0:0}}"/>
+                                                <GridViewColumn Header="On together" Width="82">
+                                                    <GridViewColumn.CellTemplate>
+                                                        <DataTemplate>
+                                                            <CheckBox IsChecked="{Binding OnAtSameTime}" HorizontalAlignment="Center"/>
+                                                        </DataTemplate>
+                                                    </GridViewColumn.CellTemplate>
+                                                </GridViewColumn>
+                                                <GridViewColumn Width="80">
+                                                    <GridViewColumn.CellTemplate>
+                                                        <DataTemplate>
+                                                            <Button Content="Remove" MinWidth="0" Padding="6,0" FontSize="12"
+                                                                    Click="LoadRemove_Click" Tag="{Binding}"/>
+                                                        </DataTemplate>
+                                                    </GridViewColumn.CellTemplate>
+                                                </GridViewColumn>
+                                            </GridView>
+                                        </ListView.View>
+                                    </ListView>
+                                </StackPanel>
+                            </GroupBox>
+
+                            <Expander x:Name="LightsExpander" Header="Christmas lights: how many strings can I chain?" Margin="0,0,0,12"
+                                      Background="White" BorderBrush="#D8DCE2" Padding="10">
+                                <StackPanel Margin="0,8,0,0">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+                                        <TextBlock Text="Type of string:" VerticalAlignment="Center" Margin="0,0,10,6"/>
+                                        <ComboBox x:Name="LightType" Grid.Column="1" Margin="0,0,0,6" SelectionChanged="LightType_Changed"/>
+                                        <TextBlock Grid.Row="1" Text="Watts per string:" VerticalAlignment="Center" Margin="0,0,10,6"/>
+                                        <TextBox x:Name="LightWatts" Grid.Row="1" Grid.Column="1" Width="70" HorizontalAlignment="Left"
+                                                 Margin="0,0,0,6" TextChanged="Light_Changed"/>
+                                        <TextBlock Grid.Row="2" Text="How many strings:" VerticalAlignment="Center" Margin="0,0,10,6"/>
+                                        <TextBox x:Name="LightCount" Grid.Row="2" Grid.Column="1" Width="70" HorizontalAlignment="Left"
+                                                 Margin="0,0,0,6" Text="10" TextChanged="Light_Changed"/>
+                                        <TextBlock Grid.Row="3" Text="Tag says connect up to:" VerticalAlignment="Center" Margin="0,0,10,6"/>
+                                        <StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal" Margin="0,0,0,6">
+                                            <TextBox x:Name="LightMax" Width="70" TextChanged="Light_Changed"/>
+                                            <TextBlock Text="strings end to end" Style="{StaticResource Hint}" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                        </StackPanel>
+                                        <TextBlock Grid.Row="4" Text="Extension cord length:" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                        <StackPanel Grid.Row="4" Grid.Column="1" Orientation="Horizontal">
+                                            <TextBox x:Name="LightFeet" Width="70" Text="50" TextChanged="Light_Changed"/>
+                                            <TextBlock Text="ft (outdoors)" Style="{StaticResource Hint}" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <Border x:Name="LightBanner" CornerRadius="6" Padding="12,8" Margin="0,12,0,0">
+                                        <StackPanel>
+                                            <TextBlock x:Name="LightChainText" TextWrapping="Wrap" FontWeight="SemiBold"/>
+                                            <TextBlock x:Name="LightCordText" TextWrapping="Wrap" Margin="0,6,0,0"/>
+                                        </StackPanel>
+                                    </Border>
+                                    <TextBlock Style="{StaticResource Hint}" Margin="0,6,0,0"
+                                               Text="The &quot;connect up to&quot; number is on the tag near the plug. If you mix brands, use the smallest number."/>
+                                </StackPanel>
+                            </Expander>
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <!-- Right: answer -->
+                    <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto">
+                        <StackPanel>
+                            <Border x:Name="LoadBanner" CornerRadius="6" Padding="16,12" Margin="0,0,0,12">
+                                <StackPanel>
+                                    <TextBlock x:Name="LoadTitle" FontSize="20" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                                    <TextBlock x:Name="LoadDetail" Margin="0,4,0,0" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </Border>
+
+                            <GroupBox Header="How full is it?">
+                                <StackPanel>
+                                    <ProgressBar x:Name="LoadBar" Height="26" Minimum="0" Maximum="125" Background="#EEF1F4"/>
+                                    <Grid Margin="0,2,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="64*"/>
+                                            <ColumnDefinition Width="16*"/>
+                                            <ColumnDefinition Width="20*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="0" Style="{StaticResource Hint}"/>
+                                        <Border Grid.Column="1" BorderBrush="#F2A900" BorderThickness="2,0,0,0">
+                                            <TextBlock Text=" 80 %" Style="{StaticResource Hint}"/>
+                                        </Border>
+                                        <Border Grid.Column="2" BorderBrush="#C62828" BorderThickness="2,0,0,0">
+                                            <TextBlock Text=" 100 % limit" Style="{StaticResource Hint}"/>
+                                        </Border>
+                                    </Grid>
+                                    <TextBlock x:Name="LoadNumbers" Margin="0,8,0,0" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </GroupBox>
+
+                            <GroupBox Header="Good to know">
+                                <ItemsControl x:Name="LoadNotes">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <BulletDecorator Margin="0,0,0,6">
+                                                <BulletDecorator.Bullet>
+                                                    <TextBlock Text="•  " FontWeight="Bold"/>
+                                                </BulletDecorator.Bullet>
+                                                <TextBlock Text="{Binding}" TextWrapping="Wrap"/>
+                                            </BulletDecorator>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </GroupBox>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+            </TabItem>
             <TabItem x:Name="DevicesTab" Header="  Devices  ">
                 <DockPanel Margin="14">
                     <Grid DockPanel.Dock="Top" Margin="0,0,0,10">
@@ -289,7 +473,6 @@
                     </ListView>
                 </DockPanel>
             </TabItem>
-            <TabItem Header="  Power strip / circuit (next)  " IsEnabled="False"/>
             <TabItem Header="  Learn (next)  " IsEnabled="False"/>
         </TabControl>
     </DockPanel>
