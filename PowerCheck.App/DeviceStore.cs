@@ -17,6 +17,8 @@ public sealed class DeviceStore
     public static readonly string MinePath = Path.Combine(BaseDir, "my-devices.json");
     public static readonly string ImagesDir = Path.Combine(BaseDir, "device-images");
     public static readonly string FavoritesPath = Path.Combine(BaseDir, "favorites.json");
+    public static readonly string GearPath = Path.Combine(BaseDir, "gear.json");
+    public static readonly string MyGearPath = Path.Combine(BaseDir, "my-gear.json");
 
     /// <summary>The one store the app uses (for display helpers in XAML).</summary>
     public static DeviceStore? Current { get; private set; }
@@ -24,6 +26,11 @@ public sealed class DeviceStore
     private readonly List<Device> _builtIn;
     private List<Device> _mine;
     private readonly HashSet<string> _favorites = new(StringComparer.OrdinalIgnoreCase);
+    private readonly List<Gear> _builtInGear;
+    private List<Gear> _myGear;
+
+    /// <summary>Raised after a strip, hub or cord is added, changed or removed. Argument: the one to select (or null).</summary>
+    public event Action<string?>? GearChanged;
 
     /// <summary>Raised after a device is added, changed or removed. Argument: old name (or null), new device (or null).</summary>
     public event Action<string?, Device?>? Changed;
@@ -32,6 +39,8 @@ public sealed class DeviceStore
     {
         _builtIn = DeviceLibrary.Load(BuiltInPath);
         _mine = DeviceLibrary.Load(MinePath);
+        _builtInGear = GearLibrary.Load(GearPath);
+        _myGear = GearLibrary.Load(MyGearPath);
         try
         {
             if (File.Exists(FavoritesPath))
@@ -50,6 +59,32 @@ public sealed class DeviceStore
     /// <summary>Favorites first, then the rest, each alphabetical. Used by the device pickers.</summary>
     public List<Device> FavoritesFirst => All.OrderBy(d => IsFavorite(d.Name) ? 0 : 1)
         .ThenBy(d => d.Name, StringComparer.CurrentCultureIgnoreCase).ToList();
+
+    // ---- Your strips, hubs and cords (gear.json built in, my-gear.json yours) ----
+
+    public List<Gear> AllGear => GearLibrary.Merge(_builtInGear, _myGear);
+
+    public bool IsMyGear(Gear g) => _myGear.Any(m => Same(m.Name, g.Name));
+
+    public bool IsBuiltInGear(string name) => _builtInGear.Any(b => Same(b.Name, name));
+
+    public void SaveGear(Gear result, Gear? old)
+    {
+        _myGear = _myGear.Where(m => !Same(m.Name, result.Name)
+                                     && (old is null || !IsMyGear(old) || !Same(m.Name, old.Name))).ToList();
+        _myGear.Add(result);
+        GearLibrary.Save(MyGearPath, _myGear);
+        GearChanged?.Invoke(result.Name);
+    }
+
+    /// <summary>Deletes your gear, or for edited built-in gear, goes back to the built-in values.</summary>
+    public void RemoveGear(Gear g)
+    {
+        _myGear = _myGear.Where(m => !Same(m.Name, g.Name)).ToList();
+        GearLibrary.Save(MyGearPath, _myGear);
+        RecycleImageIfUnused(g.Image);
+        GearChanged?.Invoke(IsBuiltInGear(g.Name) ? g.Name : null);
+    }
 
     // ---- Favorites (saved in favorites.json next to the program) ----
 
@@ -107,7 +142,8 @@ public sealed class DeviceStore
     {
         if (string.IsNullOrWhiteSpace(image)) return;
         string file = Path.GetFileName(image);
-        if (All.Any(d => string.Equals(Path.GetFileName(d.Image ?? ""), file, StringComparison.OrdinalIgnoreCase))) return;
+        if (All.Select(d => d.Image).Concat(AllGear.Select(g => g.Image))
+            .Any(i => string.Equals(Path.GetFileName(i ?? ""), file, StringComparison.OrdinalIgnoreCase))) return;
         string path = Path.Combine(ImagesDir, file);
         try
         {

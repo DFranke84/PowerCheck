@@ -71,6 +71,8 @@ public partial class MainWindow
         };
 
         RefreshLoadPicker(null);
+        _store.GearChanged += RefreshGear;
+        RefreshGear(null);
         _loadReady = true;
         RecalcLoad();
         RecalcLights();
@@ -98,6 +100,7 @@ public partial class MainWindow
         if (SrcCord.IsChecked == true && SrcCordGauge.SelectedItem is CordGauge g) return PowerSource.Cord(g);
         if (SrcCircuit15.IsChecked == true) return PowerSource.Circuit15;
         if (SrcCircuit20.IsChecked == true) return PowerSource.Circuit20;
+        if (SrcGear.IsChecked == true && GearPick.SelectedItem is Gear gear) return gear.ToSource();
         return PowerSource.PowerStrip;
     }
 
@@ -163,6 +166,92 @@ public partial class MainWindow
         LoadNumbers.Text = $"{report.Watts:0} W of {source.Watts:0} W  ({report.Amps:0.0} A of {source.Amps:0} A), " +
                            $"{plugs} plug{(plugs == 1 ? "" : "s")}. Room left: {Math.Max(0, source.Watts - report.Watts):0} W.";
         LoadNotes.ItemsSource = report.Notes;
+    }
+
+    // ---- Your own strips, hubs and cords ----
+
+    private void RefreshGear(string? select)
+    {
+        var current = select ?? (GearPick.SelectedItem as Gear)?.Name;
+        var all = _store.AllGear;
+        GearPick.ItemsSource = all;
+        GearPick.SelectedItem = all.FirstOrDefault(g => g.Name.Equals(current ?? "", StringComparison.OrdinalIgnoreCase))
+                                ?? all.FirstOrDefault();
+        ShowGearDetails();
+        RecalcLoad();
+    }
+
+    private void ShowGearDetails()
+    {
+        var g = GearPick.SelectedItem as Gear;
+        GearThumb.Source = g is null ? null
+            : DeviceStore.LoadThumb(new Device { Name = g.Name, Watts = 1, Image = g.Image });
+        GearNote.Text = g is null
+            ? "Add your own power strips, hubs, splitters and cords with New."
+            : $"{g.Type}, {g.Amps:0.#} A, {g.Outlets} outlet{(g.Outlets == 1 ? "" : "s")}. {g.Note}".Trim();
+        GearDeleteButton.IsEnabled = g is not null && _store.IsMyGear(g);
+        GearDeleteButton.Content = g is not null && _store.IsMyGear(g) && _store.IsBuiltInGear(g.Name) ? "Undo my edit" : "Delete";
+        GearLink.NavigateUri = g?.Link is string l && Uri.TryCreate(l, UriKind.Absolute, out var u) ? u : null;
+        GearLink.IsEnabled = GearLink.NavigateUri is not null;
+    }
+
+    private void GearPick_Changed(object sender, SelectionChangedEventArgs e)
+    {
+        if (!_loadReady) return;
+        ShowGearDetails();
+        if (GearPick.SelectedItem is not null) SrcGear.IsChecked = true;
+        RecalcLoad();
+    }
+
+    private void GearNew_Click(object sender, RoutedEventArgs e) => OpenGearEditor(null);
+
+    private void GearEdit_Click(object sender, RoutedEventArgs e)
+    {
+        if (GearPick.SelectedItem is Gear g) OpenGearEditor(g);
+    }
+
+    private void OpenGearEditor(Gear? gear)
+    {
+        var editor = new GearEditor(gear) { Owner = this };
+        if (editor.ShowDialog() != true || editor.Result is null) return;
+        try
+        {
+            _store.SaveGear(editor.Result, gear);
+            _store.RecycleImageIfUnused(editor.ReplacedImage);
+            SrcGear.IsChecked = true;
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, $"Couldn't save to {DeviceStore.MyGearPath}.\n\n{ex.Message}", "PowerCheck");
+        }
+    }
+
+    private void GearDelete_Click(object sender, RoutedEventArgs e)
+    {
+        if (GearPick.SelectedItem is not Gear g || !_store.IsMyGear(g)) return;
+        string question = _store.IsBuiltInGear(g.Name)
+            ? $"Go back to the original values for \"{g.Name}\"?"
+            : $"Delete \"{g.Name}\" from your strips and cords?";
+        if (MessageBox.Show(this, question, "PowerCheck", MessageBoxButton.YesNo) != MessageBoxResult.Yes) return;
+        try { _store.RemoveGear(g); }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, $"Couldn't save to {DeviceStore.MyGearPath}.\n\n{ex.Message}", "PowerCheck");
+        }
+    }
+
+    private void GearPicture_Click(object sender, RoutedEventArgs e)
+    {
+        if (GearPick.SelectedItem is not Gear g) return;
+        var image = DeviceStore.LoadImage(DeviceStore.ImagePath(new Device { Name = g.Name, Watts = 1, Image = g.Image }));
+        if (image is null)
+        {
+            if (MessageBox.Show(this, $"\"{g.Name}\" has no picture yet. Add one now?", "PowerCheck",
+                    MessageBoxButton.YesNo) == MessageBoxResult.Yes)
+                OpenGearEditor(g);
+            return;
+        }
+        ShowPicture(this, g.Name, image);
     }
 
     // ---- Christmas lights helper ----

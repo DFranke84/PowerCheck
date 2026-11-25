@@ -218,6 +218,32 @@
                                     </StackPanel>
                                     <RadioButton x:Name="SrcCircuit15" Content="A wall circuit with a 15 A breaker (most outlets)" Checked="Load_Changed" Margin="0,0,0,4"/>
                                     <RadioButton x:Name="SrcCircuit20" Content="A wall circuit with a 20 A breaker (kitchen, garage, shop)" Checked="Load_Changed"/>
+                                    <Grid Margin="0,8,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <RadioButton x:Name="SrcGear" Content="One of mine:" Checked="Load_Changed" VerticalAlignment="Center"/>
+                                        <ComboBox x:Name="GearPick" Grid.Column="1" Margin="8,0" SelectionChanged="GearPick_Changed"/>
+                                        <Button Grid.Column="2" Width="40" Height="40" Padding="0" MinWidth="0" Click="GearPicture_Click"
+                                                Background="#EEF1F4" BorderBrush="#D8DCE2" ToolTip="Click to see it bigger">
+                                            <Grid>
+                                                <TextBlock Text="&#x26A1;" FontFamily="Segoe UI Symbol" Foreground="#7A828C" FontSize="18"
+                                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                <Image x:Name="GearThumb" Stretch="UniformToFill"/>
+                                            </Grid>
+                                        </Button>
+                                    </Grid>
+                                    <TextBlock x:Name="GearNote" Style="{StaticResource Hint}" Margin="0,4,0,0"/>
+                                    <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                                        <Button Content="New strip / cord..." Click="GearNew_Click" Margin="0,0,6,0"/>
+                                        <Button Content="Edit..." Click="GearEdit_Click" Margin="0,0,6,0"/>
+                                        <Button x:Name="GearDeleteButton" Content="Delete" Click="GearDelete_Click" Margin="0,0,6,0"/>
+                                        <TextBlock VerticalAlignment="Center" Style="{StaticResource Hint}">
+                                            <Hyperlink x:Name="GearLink" RequestNavigate="ShopLink_RequestNavigate">Product page</Hyperlink>
+                                        </TextBlock>
+                                    </StackPanel>
                                     <TextBlock Style="{StaticResource Hint}" Margin="0,6,0,0"
                                                Text="The breaker's number is printed on its switch in the breaker panel."/>
                                 </StackPanel>

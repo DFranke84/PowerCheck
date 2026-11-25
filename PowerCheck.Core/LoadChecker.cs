@@ -4,11 +4,14 @@ public enum SourceKind
 {
     PowerStrip,
     Cord,
-    Circuit
+    Circuit,
+    /// <summary>A plug-in hub, cube or splitter: adds outlets but no cord length.</summary>
+    Adapter
 }
 
 /// <summary>What everything is plugged into.</summary>
-public sealed record PowerSource(string Name, double Amps, SourceKind Kind = SourceKind.Circuit)
+/// <param name="Outlets">How many outlets it has, or 0 when it doesn't matter (a wall circuit).</param>
+public sealed record PowerSource(string Name, double Amps, SourceKind Kind = SourceKind.Circuit, int Outlets = 0)
 {
     public static readonly PowerSource PowerStrip = new("Power strip (15 A)", 15, SourceKind.PowerStrip);
     public static readonly PowerSource Circuit15 = new("Wall circuit, 15 A breaker", 15, SourceKind.Circuit);
@@ -74,16 +77,29 @@ public static class LoadChecker
             notes.Add("Items marked \"not on at the same time\" aren't counted. If they ever do run together, check again.");
 
         int plugs = list.Sum(u => u.Quantity);
+        if (source.Outlets > 0 && plugs > source.Outlets)
+        {
+            notes.Insert(0, $"That's {plugs} plugs, but it only has {source.Outlets} outlet{(source.Outlets == 1 ? "" : "s")}. " +
+                            "Don't add another adapter or strip on top of it; use a second wall outlet instead.");
+            if (verdict == Verdict.Green)
+            {
+                verdict = Verdict.Yellow;
+                headline = $"Power is OK ({watts:0} W of {source.Watts:0} W), but there are more plugs than outlets.";
+            }
+        }
         switch (source.Kind)
         {
             case SourceKind.PowerStrip:
                 notes.Add("Plug the strip straight into a wall outlet: not into an extension cord or another strip.");
-                if (plugs > 6)
+                if (source.Outlets == 0 && plugs > 6)
                     notes.Add($"That's {plugs} plugs; most strips have 6 outlets. Use a second strip on a different wall outlet, not one plugged into the other.");
                 break;
             case SourceKind.Cord:
                 if (plugs > 1)
                     notes.Add("For several plugs on one cord, use a cord with a built-in multi-outlet end or a \"power block\", not stacked plug cubes.");
+                break;
+            case SourceKind.Adapter:
+                notes.Add("Plug it straight into a wall outlet. Never stack adapters, splitters or strips on each other: everything still comes out of that one wall outlet.");
                 break;
             case SourceKind.Circuit:
                 notes.Add("Everything on the same breaker counts, even in other rooms. To find out what's on it, turn the breaker off and see which outlets and lights go dead.");

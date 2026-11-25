@@ -101,6 +101,24 @@ public class RuleTests
     }
 
     [Fact]
+    public void Too_many_plugs_for_a_hub_is_yellow_even_when_power_is_fine()
+    {
+        var splitter = new Gear { Name = "Splitter", Type = "Splitter cord", Amps = 15, Outlets = 2 };
+        var r = LoadChecker.Check([new(Maintainer, 3)], splitter.ToSource());
+        Assert.Equal(Verdict.Yellow, r.Verdict);
+        Assert.StartsWith("That's 3 plugs, but it only has 2 outlets", r.Notes[0]);
+        Assert.Contains(r.Notes, n => n.Contains("Never stack adapters"));
+    }
+
+    [Fact]
+    public void Gear_rating_never_goes_above_the_plug_or_the_cord_wire()
+    {
+        Assert.Equal(15, new Gear { Name = "Strip", Amps = 20 }.ToSource().Amps);
+        Assert.Equal(13, new Gear { Name = "Cord", Type = "Extension cord", Amps = 15, Gauge = 16 }.ToSource().Amps);
+        Assert.Equal(SourceKind.Adapter, new Gear { Name = "Hub", Type = "Power hub / outlet adapter" }.Kind);
+    }
+
+    [Fact]
     public void Cord_source_is_capped_at_the_15A_plug()
     {
         Assert.Equal(15, PowerSource.Cord(CordGauge.All.Single(g => g.Awg == 12)).Amps);
