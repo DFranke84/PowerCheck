@@ -19,12 +19,18 @@ public sealed class GearRow(Gear gear, string source)
                           (Gear.LengthFeet > 0 ? $"{(Gear.Gauge > 0 ? ", " : "")}{Gear.LengthFeet} ft" : "");
     public string Source { get; } = source;
     public ImageSource? Thumb { get; } = DeviceStore.LoadThumb(AsDevice(gear));
-    public string ThumbTip => Thumb is null ? "No picture yet. Use Edit to add one." : "Click to see it bigger";
+    public string ThumbTip => string.IsNullOrEmpty(Gear.Image)
+        ? "Stock picture. Use Edit to add a photo of yours."
+        : "Click to see it bigger";
     public Uri? Url => Uri.TryCreate(Gear.Link ?? "", UriKind.Absolute, out var u) && u.Scheme is "http" or "https" ? u : null;
     public string LinkText => Url is null ? "" : "Product page";
 
     /// <summary>The picture helpers work on devices; this gives them the gear's picture.</summary>
-    public static Device AsDevice(Gear g) => new() { Name = g.Name, Watts = 1, Image = g.Image };
+    public static Device AsDevice(Gear g) => new()
+    {
+        Name = g.Name, Watts = 1,
+        Image = string.IsNullOrEmpty(g.Image) ? DeviceStore.GenericImage(g.Type) : g.Image,
+    };
 }
 
 public partial class MainWindow

@@ -169,6 +169,22 @@ public sealed class DeviceStore
         return File.Exists(path) ? path : null;
     }
 
+    /// <summary>Stock picture used when a strip, hub or cord has no picture of its own.</summary>
+    public static string GenericImage(string gearType) => gearType switch
+    {
+        "Extension cord" => "generic-extension-cord.jpg",
+        "Power hub / outlet adapter" => "generic-outlet-hub.jpg",
+        "Splitter cord" => "generic-splitter-cord.jpg",
+        _ => "generic-power-strip.jpg",
+    };
+
+    public static string GenericImage(SourceKind kind) => kind switch
+    {
+        SourceKind.Cord => "generic-extension-cord.jpg",
+        SourceKind.Adapter => "generic-outlet-hub.jpg",
+        _ => "generic-power-strip.jpg",
+    };
+
     public const int ThumbSize = 160;
     public static readonly string ThumbsDir = Path.Combine(ImagesDir, "thumbs");
 

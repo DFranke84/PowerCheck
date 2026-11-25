@@ -53,7 +53,13 @@ public sealed class LoadRow : INotifyPropertyChanged
 /// <summary>A choice in the "Add next" list.</summary>
 public sealed record ChainOption(string Label, Gear? Gear = null, bool IsCord = false, bool IsStrip = false)
 {
-    public ImageSource? Thumb { get; } = Gear is null ? null : DeviceStore.LoadThumb(GearRow.AsDevice(Gear));
+    public ImageSource? Thumb { get; } = Gear is not null
+        ? DeviceStore.LoadThumb(GearRow.AsDevice(Gear))
+        : DeviceStore.LoadThumb(new Device
+        {
+            Name = Label, Watts = 1,
+            Image = IsCord ? DeviceStore.GenericImage("Extension cord") : DeviceStore.GenericImage("Power strip"),
+        });
     public string Icon => IsCord ? "\u3030" : "\u26A1";
     public override string ToString() => Label;
 }
@@ -61,8 +67,11 @@ public sealed record ChainOption(string Label, Gear? Gear = null, bool IsCord = 
 /// <summary>A link as shown in the Step 2 list.</summary>
 public sealed record ChainRow(int Number, ChainLink Link)
 {
-    public ImageSource? Thumb { get; } = string.IsNullOrEmpty(Link.Image) ? null
-        : DeviceStore.LoadThumb(new Device { Name = Link.Name, Watts = 1, Image = Link.Image });
+    public ImageSource? Thumb { get; } = DeviceStore.LoadThumb(new Device
+    {
+        Name = Link.Name, Watts = 1,
+        Image = string.IsNullOrEmpty(Link.Image) ? DeviceStore.GenericImage(Link.Kind) : Link.Image,
+    });
     public string Icon => Link.Kind == SourceKind.Cord ? "\u3030" : "\u26A1";
     public string Text => $"{Link.Name}  ({Link.Limit:0.#} A, {Link.Outlets} outlet{(Link.Outlets == 1 ? "" : "s")})";
 }
@@ -148,7 +157,10 @@ public partial class MainWindow
                 _chain.Add(ChainLink.GenericStrip());
                 break;
             case ChainOption { Gear: Gear gear }:
-                _chain.Add(ChainLink.From(gear));
+                _chain.Add(ChainLink.From(gear) with
+                {
+                    Image = string.IsNullOrEmpty(gear.Image) ? DeviceStore.GenericImage(gear.Type) : gear.Image,
+                });
                 break;
             default:
                 return;
