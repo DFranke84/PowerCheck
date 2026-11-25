@@ -9,9 +9,16 @@ using PowerCheck.Core;
 namespace PowerCheck.App;
 
 /// <summary>One row in the Devices tab.</summary>
-public sealed class DeviceRow(Device device, string source)
+public sealed class DeviceRow(Device device, string source, bool favorite)
 {
+    private static readonly Brush Gold = new SolidColorBrush(Color.FromRgb(0xE0, 0xA0, 0x00));
+    private static readonly Brush Grey = new SolidColorBrush(Color.FromRgb(0xB0, 0xB6, 0xBE));
+
     public Device Device { get; } = device;
+    public bool IsFavorite { get; } = favorite;
+    public string Star => IsFavorite ? "★" : "☆";
+    public Brush StarBrush => IsFavorite ? Gold : Grey;
+    public string StarTip => IsFavorite ? "Favorite. Click to remove the star." : "Click to make this a favorite (it shows first in the lists).";
     public string Name => Device.Name;
     public string Note => Device.Note;
     public string Category => Device.Category;
@@ -57,6 +64,7 @@ public sealed class DeviceRow(Device device, string source)
 public partial class MainWindow
 {
     private const string AllGroups = "All groups";
+    private const string FavoritesGroup = "★ Favorites";
     private bool _devicesReady;
 
     private void InitDevicesTab()
@@ -69,7 +77,7 @@ public partial class MainWindow
     private void RefreshGroups()
     {
         string? current = GroupFilter.SelectedItem as string;
-        var groups = new List<string> { AllGroups };
+        var groups = new List<string> { AllGroups, FavoritesGroup };
         groups.AddRange(_store.Categories);
         GroupFilter.ItemsSource = groups;
         GroupFilter.SelectedItem = current is not null && groups.Contains(current) ? current : AllGroups;
@@ -87,13 +95,14 @@ public partial class MainWindow
         var all = _store.All;
 
         var rows = all
-            .Where(d => group == AllGroups || d.Category == group)
+            .Where(d => group == AllGroups || d.Category == group
+                        || (group == FavoritesGroup && _store.IsFavorite(d.Name)))
             .Where(d => search.Length == 0
                         || d.Name.Contains(search, StringComparison.CurrentCultureIgnoreCase)
                         || d.Note.Contains(search, StringComparison.CurrentCultureIgnoreCase)
                         || d.Category.Contains(search, StringComparison.CurrentCultureIgnoreCase))
             .OrderBy(d => d.Category).ThenBy(d => d.Name)
-            .Select(d => new DeviceRow(d, _store.SourceLabel(d)))
+            .Select(d => new DeviceRow(d, _store.SourceLabel(d), _store.IsFavorite(d.Name)))
             .ToList();
 
         DeviceTable.ItemsSource = rows;
@@ -140,6 +149,16 @@ public partial class MainWindow
         if (existing is not null) _items[_items.IndexOf(existing)] = existing with { Quantity = existing.Quantity + 1 };
         else _items.Add(new DeviceUse(d));
         Tabs.SelectedItem = CordTab;
+    }
+
+    private void Star_Click(object sender, RoutedEventArgs e)
+    {
+        if ((sender as FrameworkElement)?.Tag is not DeviceRow row) return;
+        try { _store.ToggleFavorite(row.Device); }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, $"Couldn't save favorites to {DeviceStore.FavoritesPath}.\n\n{ex.Message}", "PowerCheck");
+        }
     }
 
     private void Thumb_Click(object sender, RoutedEventArgs e)

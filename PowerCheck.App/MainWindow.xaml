@@ -1,10 +1,15 @@
 ﻿<Window x:Class="PowerCheck.App.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:PowerCheck.App"
         Title="PowerCheck" Height="760" Width="1220" MinHeight="600" MinWidth="1050"
         WindowStartupLocation="CenterScreen" Background="#F4F5F7"
         FontFamily="Segoe UI" FontSize="14">
     <Window.Resources>
+        <local:DeviceLabelConverter x:Key="DeviceLabel"/>
+        <DataTemplate x:Key="DevicePickerItem">
+            <TextBlock Text="{Binding Converter={StaticResource DeviceLabel}}"/>
+        </DataTemplate>
         <Style TargetType="GroupBox">
             <Setter Property="Padding" Value="10"/>
             <Setter Property="Margin" Value="0,0,0,12"/>
@@ -48,7 +53,7 @@
                                             <ColumnDefinition Width="Auto"/>
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
-                                        <ComboBox x:Name="DevicePicker" DisplayMemberPath="Name"
+                                        <ComboBox x:Name="DevicePicker" ItemTemplate="{StaticResource DevicePickerItem}"
                                                   SelectionChanged="DevicePicker_SelectionChanged"/>
                                         <TextBox x:Name="QtyBox" Grid.Column="1" Width="40" Margin="6,0"
                                                  Text="1" TextAlignment="Center" VerticalContentAlignment="Center"
@@ -221,6 +226,15 @@
                         </ListView.ItemContainerStyle>
                         <ListView.View>
                             <GridView>
+                                <GridViewColumn Header="Fav" Width="44">
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button Content="{Binding Star}" Foreground="{Binding StarBrush}" Click="Star_Click"
+                                                    Tag="{Binding}" FontSize="20" MinWidth="0" Padding="2,0" Cursor="Hand"
+                                                    Background="Transparent" BorderThickness="0" ToolTip="{Binding StarTip}"/>
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
                                 <GridViewColumn Header="Picture" Width="78">
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>

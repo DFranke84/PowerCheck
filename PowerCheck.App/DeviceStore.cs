@@ -1,4 +1,5 @@
 using System.IO;
+using System.Text.Json;
 using System.Windows.Media.Imaging;
 using PowerCheck.Core;
 
@@ -15,9 +16,14 @@ public sealed class DeviceStore
     public static readonly string BuiltInPath = Path.Combine(BaseDir, "devices.json");
     public static readonly string MinePath = Path.Combine(BaseDir, "my-devices.json");
     public static readonly string ImagesDir = Path.Combine(BaseDir, "device-images");
+    public static readonly string FavoritesPath = Path.Combine(BaseDir, "favorites.json");
+
+    /// <summary>The one store the app uses (for display helpers in XAML).</summary>
+    public static DeviceStore? Current { get; private set; }
 
     private readonly List<Device> _builtIn;
     private List<Device> _mine;
+    private readonly HashSet<string> _favorites = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>Raised after a device is added, changed or removed. Argument: old name (or null), new device (or null).</summary>
     public event Action<string?, Device?>? Changed;
@@ -26,9 +32,39 @@ public sealed class DeviceStore
     {
         _builtIn = DeviceLibrary.Load(BuiltInPath);
         _mine = DeviceLibrary.Load(MinePath);
+        try
+        {
+            if (File.Exists(FavoritesPath))
+                foreach (var n in JsonSerializer.Deserialize<List<string>>(File.ReadAllText(FavoritesPath)) ?? [])
+                    _favorites.Add(n.Trim());
+        }
+        catch
+        {
+            // A damaged favorites file just means no favorites.
+        }
+        Current = this;
     }
 
     public List<Device> All => DeviceLibrary.Merge(_builtIn, _mine);
+
+    /// <summary>Favorites first, then the rest, each alphabetical. Used by the device pickers.</summary>
+    public List<Device> FavoritesFirst => All.OrderBy(d => IsFavorite(d.Name) ? 0 : 1)
+        .ThenBy(d => d.Name, StringComparer.CurrentCultureIgnoreCase).ToList();
+
+    // ---- Favorites (saved in favorites.json next to the program) ----
+
+    public bool IsFavorite(string name) => _favorites.Contains(name.Trim());
+
+    public void ToggleFavorite(Device d)
+    {
+        if (!_favorites.Remove(d.Name.Trim())) _favorites.Add(d.Name.Trim());
+        SaveFavorites();
+        Changed?.Invoke(d.Name, d);
+    }
+
+    private void SaveFavorites() =>
+        File.WriteAllText(FavoritesPath, JsonSerializer.Serialize(_favorites.OrderBy(n => n).ToList(),
+            new JsonSerializerOptions { WriteIndented = true }));
 
     public IEnumerable<string> Categories => All.Select(d => d.Category).Distinct().OrderBy(c => c);
 
@@ -45,6 +81,13 @@ public sealed class DeviceStore
         string? oldName = old is not null && IsMine(old) ? old.Name : null;
         _mine = DeviceLibrary.Upsert(_mine, result, oldName);
         DeviceLibrary.Save(MinePath, _mine);
+        // A renamed favorite stays a favorite.
+        if (old is not null && !Same(old.Name, result.Name) && IsFavorite(old.Name))
+        {
+            if (oldName is not null) _favorites.Remove(old.Name.Trim());
+            _favorites.Add(result.Name.Trim());
+            SaveFavorites();
+        }
         Changed?.Invoke(old?.Name, result);
     }
 
@@ -54,6 +97,7 @@ public sealed class DeviceStore
         _mine = _mine.Where(m => !Same(m.Name, d.Name)).ToList();
         DeviceLibrary.Save(MinePath, _mine);
         var restored = _builtIn.FirstOrDefault(b => Same(b.Name, d.Name));
+        if (restored is null && _favorites.Remove(d.Name.Trim())) SaveFavorites();
         RecycleImageIfUnused(d.Image);
         Changed?.Invoke(d.Name, restored);
     }

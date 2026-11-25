@@ -61,7 +61,7 @@ public partial class MainWindow : Window
 
     private void RefreshPicker(string? select)
     {
-        var all = _store.All;
+        var all = _store.FavoritesFirst;
         DevicePicker.ItemsSource = all;
         DevicePicker.SelectedItem = all.FirstOrDefault(d => d.Name.Equals(select ?? "", StringComparison.OrdinalIgnoreCase))
                                     ?? all.FirstOrDefault();
