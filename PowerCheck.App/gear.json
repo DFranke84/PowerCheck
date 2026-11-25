@@ -17,5 +17,15 @@
     "lengthFeet": 1,
     "note": "About 1 ft, 16 AWG, 3-prong. 16 gauge wire is good for 13 A (about 1560 W) across both outlets together. Amazon's \"40 watts\" is a listing mistake.",
     "link": "https://www.amazon.com/dp/B000234UFG"
+  },
+  {
+    "name": "Mshyet 3-outlet outdoor cord, 1 ft 12/3",
+    "type": "Splitter cord",
+    "amps": 15,
+    "outlets": 3,
+    "gauge": 12,
+    "lengthFeet": 1,
+    "note": "12 gauge, 15 A / 1875 W, SJTW outdoor-rated, 3 grounded outlets. Heavy enough for any household load; still only one 15 A wall outlet behind it.",
+    "link": "https://www.amazon.com/dp/B0FLXZPVPM"
   }
 ]
