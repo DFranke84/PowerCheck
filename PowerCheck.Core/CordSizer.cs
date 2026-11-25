@@ -88,12 +88,15 @@ public static class CordSizer
             reason = overPlug
                 ? $"Too much for any household cord: {amps:0.0} A is over the 15 A plug rating."
                 : $"Too thin: {amps:0.0} A is over this cord's {gauge.Amps:0} A rating, so it would overheat.";
-        else if (heat == Verdict.Yellow)
-            reason = continuous
-                ? $"At {share:P0} of its {limit:0} A rating. Too close for something that runs for hours."
-                : $"At {share:P0} of its {limit:0} A rating. It works, but it's near the limit.";
+        // The worst problem is always explained first.
         else if (dropVerdict == Verdict.Red)
-            reason = $"Too long for this size: loses {drop:0.0} % of the power. Max {max} ft.";
+            reason = $"Too long for this size: loses {drop:0.0} % of the power. Max {max} ft." +
+                     (heat == Verdict.Yellow ? $" Also at {share:P0} of its {limit:0} A rating." : "");
+        else if (heat == Verdict.Yellow)
+            reason = (continuous
+                ? $"At {share:P0} of its {limit:0} A rating. Too close for something that runs for hours."
+                : $"At {share:P0} of its {limit:0} A rating. It works, but it's near the limit.") +
+                     (dropVerdict == Verdict.Yellow ? $" Also loses {drop:0.0} % over this length." : "");
         else if (dropVerdict == Verdict.Yellow)
             reason = $"Usable but loses {drop:0.0} % of the power over this length. Fully OK up to {greenMax} ft.";
         else

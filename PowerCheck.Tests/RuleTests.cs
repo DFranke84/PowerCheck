@@ -48,6 +48,17 @@ public class RuleTests
     }
 
     [Fact]
+    public void Red_cord_row_explains_the_red_problem_not_a_smaller_one()
+    {
+        // 12 A blower on 100 ft of 16 gauge: near the heat limit AND too much power lost.
+        var blower = new Device { Name = "Leaf blower", Watts = 1440, Motor = true };
+        var g16 = Gauge(CordSizer.Size([new DeviceUse(blower)], 100, outdoor: true), 16);
+        Assert.Equal(Verdict.Red, g16.Verdict);
+        Assert.StartsWith("Too long for this size", g16.Reason);
+        Assert.Contains("Also at 92%", g16.Reason.Replace(" %", "%"));
+    }
+
+    [Fact]
     public void Too_many_amps_for_any_cord_is_red()
     {
         var r = CordSizer.Size(18, 25, outdoor: false, continuous: false);

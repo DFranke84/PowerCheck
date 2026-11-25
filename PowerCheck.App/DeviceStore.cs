@@ -162,9 +162,12 @@ public sealed class DeviceStore
 
     // ---- Pictures ----
 
+    /// <summary>Set by the README screenshot mode so maker pictures are never drawn into public images.</summary>
+    public static bool NoPictures { get; set; }
+
     public static string? ImagePath(Device d)
     {
-        if (string.IsNullOrWhiteSpace(d.Image)) return null;
+        if (NoPictures || string.IsNullOrWhiteSpace(d.Image)) return null;
         string path = Path.Combine(ImagesDir, Path.GetFileName(d.Image));
         return File.Exists(path) ? path : null;
     }

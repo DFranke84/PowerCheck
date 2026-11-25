@@ -9,6 +9,8 @@ household power (120 V outlets, 15 A or 20 A breakers).
 
 > PowerCheck is a guide, not a substitute for the device's manual. When in doubt, ask an electrician.
 
+![Power strip / circuit tab: wall outlet, 50 ft cord and a 5-outlet hub feeding battery maintainers](docs/screenshots/power-strip-chain.png)
+
 ## The four tabs
 
 | Tab | What it does |
@@ -17,6 +19,19 @@ household power (120 V outlets, 15 A or 20 A breakers).
 | **Power strip / circuit** | Build it the way it's plugged in: **Step 1** the wall outlet (15 A or 20 A breaker), **Step 2** what plugs into the wall, in order (extension cord, power strip, your hubs and splitters), **Step 3** the devices at the end. Every link is checked; the weakest one decides the answer. It also warns about strips plugged into cords, stacked adapters, too many plugs for the outlets, and devices that must go straight into the wall. |
 | **Devices** | Your lists, with pictures and shop links. **Devices** on top (search, groups, ★ favorites) and **Strips, hubs & cords** below. This is the only tab that saves anything. |
 | **Learn** | Short topics in plain words (watts and amps, cords, strips, breakers, motors, outdoors, Christmas lights), a warning-signs checklist and quick numbers. |
+
+## Screenshots
+
+| Extension cord | Christmas lights helper |
+|---|---|
+| ![Extension cord tab: a 12 A leaf blower on 100 ft outdoors, with every gauge checked](docs/screenshots/extension-cord.png) | ![Christmas lights helper: 20 LED C6 strings, tag allows 17, split into 2 chains](docs/screenshots/christmas-lights.png) |
+| **Power strip / circuit: too much** | **Devices** |
+| ![A shop vac and miter saw through a 16 gauge cord and a strip: every link red](docs/screenshots/power-strip-overloaded.png) | ![Devices tab with the Strips, hubs & cords section](docs/screenshots/devices.png) |
+| **Learn** | |
+| ![Learn tab: plain-language topics and the warning-signs checklist](docs/screenshots/learn.png) | |
+
+Screenshots are made by the app itself (`PowerCheck.exe --screenshots <folder>`), drawn off-screen with
+example data and without product pictures.
 
 ## What gets saved, and where
 
