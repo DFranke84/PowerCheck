@@ -23,6 +23,7 @@ public partial class MainWindow : Window
         InitDevicesTab();
         InitLoadTab();
         InitGearTable();
+        InitLearnTab();
 
         ItemsList.ItemsSource = _items;
         _items.CollectionChanged += (_, _) => Recalculate();

@@ -641,7 +641,98 @@
                     </DockPanel>
                 </Grid>
             </TabItem>
-            <TabItem Header="  Learn (next)  " IsEnabled="False"/>
+            <TabItem x:Name="LearnTab" Header="  Learn  ">
+                <Grid Margin="14">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="6*"/>
+                        <ColumnDefinition Width="16"/>
+                        <ColumnDefinition Width="4*" MinWidth="340"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Left: topics -->
+                    <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto">
+                        <StackPanel>
+                            <TextBlock Text="The basics, in plain words" FontSize="18" FontWeight="SemiBold"/>
+                            <TextBlock Style="{StaticResource Hint}" Margin="0,2,0,10" FontSize="13.5"
+                                       Text="Click a topic to open it."/>
+                            <ItemsControl x:Name="LearnTopics">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Background="White" BorderBrush="#D8DCE2" BorderThickness="1" CornerRadius="6"
+                                                Margin="0,0,0,8" Padding="10,6">
+                                            <Expander>
+                                                <Expander.Header>
+                                                    <StackPanel Orientation="Horizontal" Margin="4,2">
+                                                        <TextBlock Text="{Binding Icon}" FontFamily="Segoe UI Symbol" FontSize="20"
+                                                                   Foreground="#2E7D32" Width="30" VerticalAlignment="Center"/>
+                                                        <StackPanel>
+                                                            <TextBlock Text="{Binding Title}" FontSize="15" FontWeight="SemiBold"/>
+                                                            <TextBlock Text="{Binding Summary}" Style="{StaticResource Hint}" FontSize="13"/>
+                                                        </StackPanel>
+                                                    </StackPanel>
+                                                </Expander.Header>
+                                                <ItemsControl ItemsSource="{Binding Points}" Margin="34,8,8,4">
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <BulletDecorator Margin="0,0,0,6">
+                                                                <BulletDecorator.Bullet>
+                                                                    <TextBlock Text="•  " FontWeight="Bold"/>
+                                                                </BulletDecorator.Bullet>
+                                                                <TextBlock Text="{Binding}" TextWrapping="Wrap"/>
+                                                            </BulletDecorator>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </Expander>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <!-- Right: warning signs checklist -->
+                    <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto">
+                        <StackPanel>
+                            <Border Background="#FBE3E3" BorderBrush="#C62828" BorderThickness="4,0,0,0" CornerRadius="6" Padding="14,10">
+                                <StackPanel>
+                                    <TextBlock Text="Warning signs" FontSize="18" FontWeight="SemiBold"/>
+                                    <TextBlock TextWrapping="Wrap" Margin="0,4,0,10"
+                                               Text="Walk around the house, garage and yard and tick anything you notice. Nothing here is saved."/>
+                                    <ItemsControl x:Name="WarningList">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <CheckBox Content="{Binding}" Margin="0,0,0,8" Checked="Warning_Changed" Unchecked="Warning_Changed">
+                                                    <CheckBox.ContentTemplate>
+                                                        <DataTemplate>
+                                                            <TextBlock Text="{Binding}" TextWrapping="Wrap"/>
+                                                        </DataTemplate>
+                                                    </CheckBox.ContentTemplate>
+                                                </CheckBox>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                    <Border x:Name="WarningAdvice" Background="White" CornerRadius="4" Padding="10,8" Margin="0,6,0,0">
+                                        <TextBlock x:Name="WarningAdviceText" TextWrapping="Wrap"/>
+                                    </Border>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Background="White" BorderBrush="#D8DCE2" BorderThickness="1" CornerRadius="6" Padding="14,10" Margin="0,12,0,0">
+                                <StackPanel>
+                                    <TextBlock Text="Quick numbers" FontSize="15" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                                    <TextBlock TextWrapping="Wrap" LineHeight="22">
+                                        <Run Text="15 A outlet = 1800 W total (1440 W for all-day loads)"/><LineBreak/>
+                                        <Run Text="20 A circuit = 2400 W total (1920 W for all-day loads)"/><LineBreak/>
+                                        <Run Text="Watts = amps × 120"/><LineBreak/>
+                                        <Run Text="16 ga 13 A · 14 ga 15 A · 12 ga 20 A · 10 ga 25 A"/>
+                                    </TextBlock>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+            </TabItem>
         </TabControl>
     </DockPanel>
 </Window>
