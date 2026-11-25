@@ -53,12 +53,17 @@ public sealed class LoadRow : INotifyPropertyChanged
 /// <summary>A choice in the "Add next" list.</summary>
 public sealed record ChainOption(string Label, Gear? Gear = null, bool IsCord = false, bool IsStrip = false)
 {
+    public ImageSource? Thumb { get; } = Gear is null ? null : DeviceStore.LoadThumb(GearRow.AsDevice(Gear));
+    public string Icon => IsCord ? "\u3030" : "\u26A1";
     public override string ToString() => Label;
 }
 
 /// <summary>A link as shown in the Step 2 list.</summary>
 public sealed record ChainRow(int Number, ChainLink Link)
 {
+    public ImageSource? Thumb { get; } = string.IsNullOrEmpty(Link.Image) ? null
+        : DeviceStore.LoadThumb(new Device { Name = Link.Name, Watts = 1, Image = Link.Image });
+    public string Icon => Link.Kind == SourceKind.Cord ? "\u3030" : "\u26A1";
     public string Text => $"{Link.Name}  ({Link.Limit:0.#} A, {Link.Outlets} outlet{(Link.Outlets == 1 ? "" : "s")})";
 }
 
@@ -118,6 +123,8 @@ public partial class MainWindow
     {
         var o = ChainAddPick.SelectedItem as ChainOption;
         ChainCordFields.Visibility = o?.IsCord == true ? Visibility.Visible : Visibility.Collapsed;
+        ChainAddThumb.Source = o?.Thumb;
+        ChainAddIcon.Text = o?.Icon ?? "";
         ChainAddNote.Text = o?.Gear is Gear g
             ? $"{g.Type}, {g.Amps:0.#} A, {g.Outlets} outlet{(g.Outlets == 1 ? "" : "s")}. {g.Note}".Trim()
             : o?.IsStrip == true ? "A typical strip. To list your own, add it on the Devices tab under Strips, hubs & cords." : "";

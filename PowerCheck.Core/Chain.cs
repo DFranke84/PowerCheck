@@ -16,6 +16,9 @@ public sealed record ChainLink
     public int Gauge { get; init; }
     public int LengthFeet { get; init; }
 
+    /// <summary>Picture file name (from the strips, hubs and cords list), if any.</summary>
+    public string? Image { get; init; }
+
     public double Limit
     {
         get
@@ -40,6 +43,7 @@ public sealed record ChainLink
     public static ChainLink From(Gear g) => new()
     {
         Name = g.Name, Kind = g.Kind, Amps = g.Amps, Outlets = g.Outlets, Gauge = g.Gauge, LengthFeet = g.LengthFeet,
+        Image = g.Image,
     };
 
     public override string ToString() => Name;
