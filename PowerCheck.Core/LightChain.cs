@@ -6,6 +6,8 @@ public sealed record LightType(string Name, double WattsPerString, int TypicalMa
     [
         new("LED mini lights (100 bulbs)", 6, 40),
         new("Incandescent mini lights (100 bulbs)", 40, 3),
+        new("LED C6, 50 bulbs (Holiday Time)", 5, 40),
+        new("LED C6, 200 bulbs (Holiday Time)", 12, 17),
         new("LED C9 (25 bulbs)", 15, 20),
         new("Incandescent C7 (25 bulbs)", 125, 3),
         new("Incandescent C9 (25 bulbs)", 175, 3),
