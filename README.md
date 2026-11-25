@@ -67,3 +67,7 @@ without them: devices show a small symbol instead, and you can add your own pict
 - `PowerCheck.Core`: the rules (cord sizing, loads, chains, Christmas lights) with no UI.
 - `PowerCheck.App`: the WPF window.
 - `PowerCheck.Tests`: xUnit tests for the rules.
+
+## License
+
+MIT. See [LICENSE](LICENSE). Product pictures are not included; they belong to their makers.
