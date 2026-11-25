@@ -67,6 +67,8 @@ public sealed class DeviceStore
         string path = Path.Combine(ImagesDir, file);
         try
         {
+            string thumb = Path.Combine(ThumbsDir, Path.GetFileNameWithoutExtension(file) + ".thumb.png");
+            if (File.Exists(thumb)) File.Delete(thumb); // made by the app, rebuilt when needed
             if (File.Exists(path))
                 Microsoft.VisualBasic.FileIO.FileSystem.DeleteFile(path,
                     Microsoft.VisualBasic.FileIO.UIOption.OnlyErrorDialogs,
@@ -85,6 +87,39 @@ public sealed class DeviceStore
         if (string.IsNullOrWhiteSpace(d.Image)) return null;
         string path = Path.Combine(ImagesDir, Path.GetFileName(d.Image));
         return File.Exists(path) ? path : null;
+    }
+
+    public const int ThumbSize = 160;
+    public static readonly string ThumbsDir = Path.Combine(ImagesDir, "thumbs");
+
+    /// <summary>
+    /// Small copy of the device picture for the list. Made once, the first time it's
+    /// needed (and again if the picture changes), and kept in device-images\thumbs.
+    /// </summary>
+    public static BitmapSource? LoadThumb(Device d)
+    {
+        string? source = ImagePath(d);
+        if (source is null) return null;
+        string thumb = Path.Combine(ThumbsDir, Path.GetFileNameWithoutExtension(source) + ".thumb.png");
+        try
+        {
+            if (!File.Exists(thumb) || File.GetLastWriteTimeUtc(thumb) < File.GetLastWriteTimeUtc(source))
+            {
+                var small = LoadImage(source, ThumbSize);
+                if (small is null) return null;
+                Directory.CreateDirectory(ThumbsDir);
+                using var fs = File.Create(thumb);
+                var enc = new PngBitmapEncoder();
+                enc.Frames.Add(BitmapFrame.Create(small));
+                enc.Save(fs);
+                return small;
+            }
+            return LoadImage(thumb);
+        }
+        catch
+        {
+            return LoadImage(source, ThumbSize);
+        }
     }
 
     /// <summary>Copies a picture into device-images and returns its new file name.</summary>

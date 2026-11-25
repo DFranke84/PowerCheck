@@ -18,7 +18,7 @@ public sealed class DeviceRow(Device device, string source)
     public double Watts => Device.Watts;
     public double Amps => Device.Amps;
     public string Source { get; } = source switch { "Yours" => "Yours", "Edited" => "Edited", _ => "Built-in" };
-    public ImageSource? Thumb { get; } = DeviceStore.LoadImage(DeviceStore.ImagePath(device), 120);
+    public ImageSource? Thumb { get; } = DeviceStore.LoadThumb(device);
     public string ThumbTip => Thumb is null ? "No picture yet. Use Edit to add one." : "Click to see it bigger";
     public string Icon => CategoryIcon(Device.Category);
     public Uri Url => new(Device.ShopUrl);
