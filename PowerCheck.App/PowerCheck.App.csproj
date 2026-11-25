@@ -11,21 +11,25 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <AssemblyTitle>PowerCheck</AssemblyTitle>
-    <Version>0.1.0</Version>
+    <AssemblyName>PowerCheck</AssemblyName>
+    <Version>1.0.0</Version>
   </PropertyGroup>
 
   <ItemGroup>
     <Content Include="device-images\*.png;device-images\*.jpg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>Always</CopyToPublishDirectory>
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
     </Content>
     <Content Include="gear.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>Always</CopyToPublishDirectory>
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
     </Content>
     <Content Include="devices.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>Always</CopyToPublishDirectory>
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
     </Content>
   </ItemGroup>
 
@@ -40,5 +44,12 @@
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
     <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
   </PropertyGroup>
+
+  <Target Name="CleanPublishArtifacts" AfterTargets="Publish">
+    <ItemGroup>
+      <_CleanupFiles Include="$(PublishDir)\*.pdb;$(PublishDir)\*.xml" />
+    </ItemGroup>
+    <Delete Files="@(_CleanupFiles)" TreatErrorsAsWarnings="true" />
+  </Target>
 
 </Project>
