@@ -104,7 +104,7 @@ public partial class MainWindow
             new("Extension cord (pick its size and length)", IsCord: true),
             new("Power strip (15 A, 6 outlets)", IsStrip: true),
         };
-        options.AddRange(_store.AllGear.Select(g => new ChainOption($"Mine: {g.Name}", g)));
+        options.AddRange(_store.AllGear.Select(g => new ChainOption(g.Name, g)));
 
         string? current = selectGear ?? (ChainAddPick.SelectedItem as ChainOption)?.Gear?.Name;
         ChainAddPick.ItemsSource = options;
@@ -120,12 +120,7 @@ public partial class MainWindow
         ChainCordFields.Visibility = o?.IsCord == true ? Visibility.Visible : Visibility.Collapsed;
         ChainAddNote.Text = o?.Gear is Gear g
             ? $"{g.Type}, {g.Amps:0.#} A, {g.Outlets} outlet{(g.Outlets == 1 ? "" : "s")}. {g.Note}".Trim()
-            : o?.IsStrip == true ? "A typical strip. To use one of your own, add it under My strips & cords." : "";
-        bool mine = o?.Gear is not null && _store.IsMyGear(o.Gear);
-        GearEditButton.IsEnabled = o?.Gear is not null;
-        GearPictureButton.IsEnabled = o?.Gear is not null;
-        GearDeleteButton.IsEnabled = mine;
-        GearDeleteButton.Content = mine && _store.IsBuiltInGear(o!.Gear!.Name) ? "Undo my edit" : "Delete";
+            : o?.IsStrip == true ? "A typical strip. To list your own, add it on the Devices tab under Strips, hubs & cords." : "";
     }
 
     private void ChainAddPick_Changed(object sender, SelectionChangedEventArgs e) => ShowAddOption();
@@ -259,60 +254,6 @@ public partial class MainWindow
             $"{report.Watts:0} W in total ({report.Amps:0.0} A).", Brush("#7A828C"), 0));
         LinkRows.ItemsSource = rows;
         LoadNotes.ItemsSource = _loadRows.Count == 0 ? null : report.Notes;
-    }
-
-    // ---- My strips & cords ----
-
-    private Gear? SelectedGear => (ChainAddPick.SelectedItem as ChainOption)?.Gear;
-
-    private void GearNew_Click(object sender, RoutedEventArgs e) => OpenGearEditor(null);
-
-    private void GearEdit_Click(object sender, RoutedEventArgs e)
-    {
-        if (SelectedGear is Gear g) OpenGearEditor(g);
-    }
-
-    private void OpenGearEditor(Gear? gear)
-    {
-        var editor = new GearEditor(gear) { Owner = this };
-        if (editor.ShowDialog() != true || editor.Result is null) return;
-        try
-        {
-            _store.SaveGear(editor.Result, gear);
-            _store.RecycleImageIfUnused(editor.ReplacedImage);
-        }
-        catch (Exception ex)
-        {
-            MessageBox.Show(this, $"Couldn't save to {DeviceStore.MyGearPath}.\n\n{ex.Message}", "PowerCheck");
-        }
-    }
-
-    private void GearDelete_Click(object sender, RoutedEventArgs e)
-    {
-        if (SelectedGear is not Gear g || !_store.IsMyGear(g)) return;
-        string question = _store.IsBuiltInGear(g.Name)
-            ? $"Go back to the original values for \"{g.Name}\"?"
-            : $"Delete \"{g.Name}\" from your strips and cords?";
-        if (MessageBox.Show(this, question, "PowerCheck", MessageBoxButton.YesNo) != MessageBoxResult.Yes) return;
-        try { _store.RemoveGear(g); }
-        catch (Exception ex)
-        {
-            MessageBox.Show(this, $"Couldn't save to {DeviceStore.MyGearPath}.\n\n{ex.Message}", "PowerCheck");
-        }
-    }
-
-    private void GearPicture_Click(object sender, RoutedEventArgs e)
-    {
-        if (SelectedGear is not Gear g) return;
-        var image = DeviceStore.LoadImage(DeviceStore.ImagePath(new Device { Name = g.Name, Watts = 1, Image = g.Image }));
-        if (image is null)
-        {
-            if (MessageBox.Show(this, $"\"{g.Name}\" has no picture yet. Add one now?", "PowerCheck",
-                    MessageBoxButton.YesNo) == MessageBoxResult.Yes)
-                OpenGearEditor(g);
-            return;
-        }
-        ShowPicture(this, g.Name, image);
     }
 
     // ---- Christmas lights helper (on the Extension cord tab) ----

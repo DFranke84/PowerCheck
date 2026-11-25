@@ -22,6 +22,7 @@ public partial class MainWindow : Window
         RefreshPicker(null);
         InitDevicesTab();
         InitLoadTab();
+        InitGearTable();
 
         ItemsList.ItemsSource = _items;
         _items.CollectionChanged += (_, _) => Recalculate();
@@ -75,12 +76,10 @@ public partial class MainWindow : Window
         if (DevicePicker.SelectedItem is not Device d)
         {
             DeviceNote.Text = "";
-            DeleteDeviceButton.IsEnabled = false;
             return;
         }
         string source = _store.SourceLabel(d) switch { "Edited" => " (your edited copy)", "Yours" => " (your device)", _ => "" };
         DeviceNote.Text = $"{d.Watts:0} W ({d.Amps:0.0} A){source}. {d.Note}".TrimEnd();
-        SetDeleteButton(DeleteDeviceButton, d);
     }
 
     private void SetDeleteButton(Button button, Device? d)
@@ -92,16 +91,6 @@ public partial class MainWindow : Window
     }
 
     private void NewDevice_Click(object sender, RoutedEventArgs e) => OpenEditor(null);
-
-    private void EditDevice_Click(object sender, RoutedEventArgs e)
-    {
-        if (DevicePicker.SelectedItem is Device d) OpenEditor(d);
-    }
-
-    private void DeleteDevice_Click(object sender, RoutedEventArgs e)
-    {
-        if (DevicePicker.SelectedItem is Device d) DeleteDevice(d);
-    }
 
     private void OpenEditor(Device? device)
     {
