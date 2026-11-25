@@ -50,7 +50,7 @@ public static class LearnContent
                 "Never replace a breaker with a bigger one to stop it tripping. That's how wires overheat inside walls.",
             ]),
 
-        new("☖", "Plug straight into the wall",
+        new("⚠", "Plug straight into the wall",
             "Some things should never go on an extension cord or power strip.",
             [
                 "Space heaters and oil-filled radiators.",
