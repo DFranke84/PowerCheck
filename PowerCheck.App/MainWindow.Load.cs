@@ -4,11 +4,12 @@ using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 using PowerCheck.Core;
 
 namespace PowerCheck.App;
 
-/// <summary>One line on the Power strip / circuit tab. Quantity and "on together" can be changed in place.</summary>
+/// <summary>One device at the end of the chain. Quantity and "runs" can be changed in place.</summary>
 public sealed class LoadRow : INotifyPropertyChanged
 {
     private Device _device;
@@ -49,16 +50,32 @@ public sealed class LoadRow : INotifyPropertyChanged
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 }
 
+/// <summary>A choice in the "Add next" list.</summary>
+public sealed record ChainOption(string Label, Gear? Gear = null, bool IsCord = false, bool IsStrip = false)
+{
+    public override string ToString() => Label;
+}
+
+/// <summary>A link as shown in the Step 2 list.</summary>
+public sealed record ChainRow(int Number, ChainLink Link)
+{
+    public string Text => $"{Link.Name}  ({Link.Limit:0.#} A, {Link.Outlets} outlet{(Link.Outlets == 1 ? "" : "s")})";
+}
+
+/// <summary>A link as shown in the answer on the right.</summary>
+public sealed record LinkRow(string Name, string Reason, Brush Brush, double Percent);
+
 public partial class MainWindow
 {
     private readonly ObservableCollection<LoadRow> _loadRows = [];
+    private readonly List<ChainLink> _chain = [];
     private bool _loadReady;
 
     private void InitLoadTab()
     {
-        SrcCordGauge.ItemsSource = CordGauge.All;
-        SrcCordGauge.DisplayMemberPath = nameof(CordGauge.Label);
-        SrcCordGauge.SelectedItem = CordGauge.All.Single(g => g.Awg == 14);
+        ChainCordGauge.ItemsSource = CordGauge.All;
+        ChainCordGauge.DisplayMemberPath = nameof(CordGauge.Label);
+        ChainCordGauge.SelectedItem = CordGauge.All.Single(g => g.Awg == 14);
 
         LightType.ItemsSource = Core.LightType.All;
         LightType.SelectedIndex = 0;
@@ -71,12 +88,96 @@ public partial class MainWindow
         };
 
         RefreshLoadPicker(null);
-        _store.GearChanged += RefreshGear;
-        RefreshGear(null);
+        _store.GearChanged += RefreshChainOptions;
+        RefreshChainOptions(null);
         _loadReady = true;
-        RecalcLoad();
+        ShowChain();
         RecalcLights();
     }
+
+    // ---- Step 2: the chain ----
+
+    private void RefreshChainOptions(string? selectGear)
+    {
+        var options = new List<ChainOption>
+        {
+            new("Extension cord (pick its size and length)", IsCord: true),
+            new("Power strip (15 A, 6 outlets)", IsStrip: true),
+        };
+        options.AddRange(_store.AllGear.Select(g => new ChainOption($"Mine: {g.Name}", g)));
+
+        string? current = selectGear ?? (ChainAddPick.SelectedItem as ChainOption)?.Gear?.Name;
+        ChainAddPick.ItemsSource = options;
+        ChainAddPick.SelectedItem = options.FirstOrDefault(o => o.Gear is not null && current is not null &&
+                                                                o.Gear.Name.Equals(current, StringComparison.OrdinalIgnoreCase))
+                                    ?? options[0];
+        ShowAddOption();
+    }
+
+    private void ShowAddOption()
+    {
+        var o = ChainAddPick.SelectedItem as ChainOption;
+        ChainCordFields.Visibility = o?.IsCord == true ? Visibility.Visible : Visibility.Collapsed;
+        ChainAddNote.Text = o?.Gear is Gear g
+            ? $"{g.Type}, {g.Amps:0.#} A, {g.Outlets} outlet{(g.Outlets == 1 ? "" : "s")}. {g.Note}".Trim()
+            : o?.IsStrip == true ? "A typical strip. To use one of your own, add it under My strips & cords." : "";
+        bool mine = o?.Gear is not null && _store.IsMyGear(o.Gear);
+        GearEditButton.IsEnabled = o?.Gear is not null;
+        GearPictureButton.IsEnabled = o?.Gear is not null;
+        GearDeleteButton.IsEnabled = mine;
+        GearDeleteButton.Content = mine && _store.IsBuiltInGear(o!.Gear!.Name) ? "Undo my edit" : "Delete";
+    }
+
+    private void ChainAddPick_Changed(object sender, SelectionChangedEventArgs e) => ShowAddOption();
+
+    private void ChainAdd_Click(object sender, RoutedEventArgs e)
+    {
+        switch (ChainAddPick.SelectedItem)
+        {
+            case ChainOption { IsCord: true }:
+                if (ChainCordGauge.SelectedItem is not CordGauge g || !int.TryParse(ChainCordFeet.Text, out var ft) || ft <= 0)
+                {
+                    MessageBox.Show(this, "Pick the cord's gauge and type its length in feet.", "PowerCheck");
+                    return;
+                }
+                _chain.Add(ChainLink.ExtensionCord(g, Math.Min(ft, 1000)));
+                break;
+            case ChainOption { IsStrip: true }:
+                _chain.Add(ChainLink.GenericStrip());
+                break;
+            case ChainOption { Gear: Gear gear }:
+                _chain.Add(ChainLink.From(gear));
+                break;
+            default:
+                return;
+        }
+        ShowChain();
+    }
+
+    private void ChainRemove_Click(object sender, RoutedEventArgs e)
+    {
+        if ((sender as FrameworkElement)?.Tag is ChainRow row) _chain.RemoveAt(row.Number - 1);
+        ShowChain();
+    }
+
+    private void ChainUp_Click(object sender, RoutedEventArgs e)
+    {
+        if ((sender as FrameworkElement)?.Tag is not ChainRow row || row.Number < 2) return;
+        int i = row.Number - 1;
+        (_chain[i - 1], _chain[i]) = (_chain[i], _chain[i - 1]);
+        ShowChain();
+    }
+
+    private void ShowChain()
+    {
+        ChainList.ItemsSource = _chain.Select((l, i) => new ChainRow(i + 1, l)).ToList();
+        ChainEmpty.Visibility = _chain.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        RecalcLoad();
+    }
+
+    private void Chain_Changed(object sender, RoutedEventArgs e) => RecalcLoad();
+
+    // ---- Step 3: the devices ----
 
     private void RefreshLoadPicker(string? select)
     {
@@ -95,33 +196,13 @@ public partial class MainWindow
             r.Device = device;
     }
 
-    private PowerSource SelectedSource()
-    {
-        if (SrcCord.IsChecked == true && SrcCordGauge.SelectedItem is CordGauge g) return PowerSource.Cord(g);
-        if (SrcCircuit15.IsChecked == true) return PowerSource.Circuit15;
-        if (SrcCircuit20.IsChecked == true) return PowerSource.Circuit20;
-        if (SrcGear.IsChecked == true && GearPick.SelectedItem is Gear gear) return gear.ToSource();
-        return PowerSource.PowerStrip;
-    }
-
-    private void Load_Changed(object sender, RoutedEventArgs e)
-    {
-        if (sender == SrcCordGauge && _loadReady) SrcCord.IsChecked = true;
-        RecalcLoad();
-    }
-
-    private void AddLoad(Device d, int qty)
-    {
-        var existing = _loadRows.FirstOrDefault(r => r.Device.Name.Equals(d.Name, StringComparison.OrdinalIgnoreCase));
-        if (existing is not null) existing.Quantity += qty;
-        else _loadRows.Add(new LoadRow(d, qty));
-    }
-
     private void LoadAdd_Click(object sender, RoutedEventArgs e)
     {
         if (LoadPicker.SelectedItem is not Device d) return;
         int qty = int.TryParse(LoadQty.Text, out var q) && q > 0 ? Math.Min(q, 100) : 1;
-        AddLoad(d, qty);
+        var existing = _loadRows.FirstOrDefault(r => r.Device.Name.Equals(d.Name, StringComparison.OrdinalIgnoreCase));
+        if (existing is not null) existing.Quantity += qty;
+        else _loadRows.Add(new LoadRow(d, qty));
     }
 
     private void LoadRemove_Click(object sender, RoutedEventArgs e)
@@ -129,85 +210,47 @@ public partial class MainWindow
         if ((sender as FrameworkElement)?.Tag is LoadRow r) _loadRows.Remove(r);
     }
 
-    private void LoadClear_Click(object sender, RoutedEventArgs e) => _loadRows.Clear();
+    // ---- The answer ----
 
     private void RecalcLoad()
     {
         if (!_loadReady) return;
-        var source = SelectedSource();
+        double breaker = Wall20.IsChecked == true ? 20 : 15;
+        var report = ChainCheck.Check(breaker, _chain, _loadRows.Select(r => r.ToUse()).ToList());
 
         if (_loadRows.Count == 0)
         {
             LoadBanner.Background = Brush("#E9ECF0");
             LoadBanner.BorderThickness = new Thickness(0);
-            LoadTitle.Text = "Add what's plugged in";
-            LoadDetail.Text = $"Checking against: {source.Name}, {source.Watts:0} W.";
-            LoadBar.Value = 0;
-            LoadNumbers.Text = "";
-            LoadNotes.ItemsSource = null;
-            return;
+            LoadTitle.Text = "Add the devices in Step 3";
+            LoadDetail.Text = "The answer shows here, with a check of every link from the wall to the devices.";
+        }
+        else
+        {
+            LoadBanner.Background = Light(report.Verdict);
+            LoadBanner.BorderBrush = Dot(report.Verdict);
+            LoadBanner.BorderThickness = new Thickness(4, 0, 0, 0);
+            LoadTitle.Text = report.Verdict switch { Verdict.Green => "OK", Verdict.Yellow => "Near the limit", _ => "Too much" };
+            LoadDetail.Text = report.Headline;
         }
 
-        var report = LoadChecker.Check(_loadRows.Select(r => r.ToUse()), source);
-        LoadBanner.Background = Light(report.Verdict);
-        LoadBanner.BorderBrush = Dot(report.Verdict);
-        LoadBanner.BorderThickness = new Thickness(4, 0, 0, 0);
-        LoadTitle.Text = report.Verdict switch
-        {
-            Verdict.Green => "OK",
-            Verdict.Yellow => "Near the limit",
-            _ => "Overloaded"
-        };
-        LoadDetail.Text = report.Headline;
-
-        LoadBar.Value = Math.Min(report.Share * 100, 125);
-        LoadBar.Foreground = Dot(report.Verdict);
+        var rows = report.Links.Select(l => new LinkRow(l.Name, l.Reason, Dot(l.Verdict), Math.Min(l.Share * 100, 125))).ToList();
         int plugs = _loadRows.Sum(r => r.Quantity);
-        LoadNumbers.Text = $"{report.Watts:0} W of {source.Watts:0} W  ({report.Amps:0.0} A of {source.Amps:0} A), " +
-                           $"{plugs} plug{(plugs == 1 ? "" : "s")}. Room left: {Math.Max(0, source.Watts - report.Watts):0} W.";
-        LoadNotes.ItemsSource = report.Notes;
+        rows.Add(new LinkRow($"{plugs} device{(plugs == 1 ? "" : "s")} at the end",
+            $"{report.Watts:0} W in total ({report.Amps:0.0} A).", Brush("#7A828C"), 0));
+        LinkRows.ItemsSource = rows;
+        LoadNotes.ItemsSource = _loadRows.Count == 0 ? null : report.Notes;
     }
 
-    // ---- Your own strips, hubs and cords ----
+    // ---- My strips & cords ----
 
-    private void RefreshGear(string? select)
-    {
-        var current = select ?? (GearPick.SelectedItem as Gear)?.Name;
-        var all = _store.AllGear;
-        GearPick.ItemsSource = all;
-        GearPick.SelectedItem = all.FirstOrDefault(g => g.Name.Equals(current ?? "", StringComparison.OrdinalIgnoreCase))
-                                ?? all.FirstOrDefault();
-        ShowGearDetails();
-        RecalcLoad();
-    }
-
-    private void ShowGearDetails()
-    {
-        var g = GearPick.SelectedItem as Gear;
-        GearThumb.Source = g is null ? null
-            : DeviceStore.LoadThumb(new Device { Name = g.Name, Watts = 1, Image = g.Image });
-        GearNote.Text = g is null
-            ? "Add your own power strips, hubs, splitters and cords with New."
-            : $"{g.Type}, {g.Amps:0.#} A, {g.Outlets} outlet{(g.Outlets == 1 ? "" : "s")}. {g.Note}".Trim();
-        GearDeleteButton.IsEnabled = g is not null && _store.IsMyGear(g);
-        GearDeleteButton.Content = g is not null && _store.IsMyGear(g) && _store.IsBuiltInGear(g.Name) ? "Undo my edit" : "Delete";
-        GearLink.NavigateUri = g?.Link is string l && Uri.TryCreate(l, UriKind.Absolute, out var u) ? u : null;
-        GearLink.IsEnabled = GearLink.NavigateUri is not null;
-    }
-
-    private void GearPick_Changed(object sender, SelectionChangedEventArgs e)
-    {
-        if (!_loadReady) return;
-        ShowGearDetails();
-        if (GearPick.SelectedItem is not null) SrcGear.IsChecked = true;
-        RecalcLoad();
-    }
+    private Gear? SelectedGear => (ChainAddPick.SelectedItem as ChainOption)?.Gear;
 
     private void GearNew_Click(object sender, RoutedEventArgs e) => OpenGearEditor(null);
 
     private void GearEdit_Click(object sender, RoutedEventArgs e)
     {
-        if (GearPick.SelectedItem is Gear g) OpenGearEditor(g);
+        if (SelectedGear is Gear g) OpenGearEditor(g);
     }
 
     private void OpenGearEditor(Gear? gear)
@@ -218,7 +261,6 @@ public partial class MainWindow
         {
             _store.SaveGear(editor.Result, gear);
             _store.RecycleImageIfUnused(editor.ReplacedImage);
-            SrcGear.IsChecked = true;
         }
         catch (Exception ex)
         {
@@ -228,7 +270,7 @@ public partial class MainWindow
 
     private void GearDelete_Click(object sender, RoutedEventArgs e)
     {
-        if (GearPick.SelectedItem is not Gear g || !_store.IsMyGear(g)) return;
+        if (SelectedGear is not Gear g || !_store.IsMyGear(g)) return;
         string question = _store.IsBuiltInGear(g.Name)
             ? $"Go back to the original values for \"{g.Name}\"?"
             : $"Delete \"{g.Name}\" from your strips and cords?";
@@ -242,7 +284,7 @@ public partial class MainWindow
 
     private void GearPicture_Click(object sender, RoutedEventArgs e)
     {
-        if (GearPick.SelectedItem is not Gear g) return;
+        if (SelectedGear is not Gear g) return;
         var image = DeviceStore.LoadImage(DeviceStore.ImagePath(new Device { Name = g.Name, Watts = 1, Image = g.Image }));
         if (image is null)
         {
@@ -254,7 +296,7 @@ public partial class MainWindow
         ShowPicture(this, g.Name, image);
     }
 
-    // ---- Christmas lights helper ----
+    // ---- Christmas lights helper (on the Extension cord tab) ----
 
     private void LightType_Changed(object sender, SelectionChangedEventArgs e)
     {
@@ -286,46 +328,6 @@ public partial class MainWindow
         LightBanner.Background = Light(worst);
         LightChainText.Text = r.ChainAdvice;
         LightCordText.Text = $"All {count} strings: {r.Watts:0} W ({Electric.WattsToAmps(r.Watts):0.0} A). " +
-                             (r.Cord.Recommended is null
-                                 ? r.Cord.Headline
-                                 : $"Cord for {feet} ft: {r.Cord.Headline}");
-    }
-
-    // ---- Ready-made examples ----
-
-    private Device? Find(string name) =>
-        _store.All.FirstOrDefault(d => d.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
-
-    private void LoadExample(PowerSource source, params (string Name, int Qty)[] items)
-    {
-        _loadRows.Clear();
-        foreach (var (name, qty) in items)
-            if (Find(name) is Device d) _loadRows.Add(new LoadRow(d, qty));
-        SrcStrip.IsChecked = source.Kind == SourceKind.PowerStrip;
-        SrcCircuit15.IsChecked = source == PowerSource.Circuit15;
-        SrcCircuit20.IsChecked = source == PowerSource.Circuit20;
-        RecalcLoad();
-    }
-
-    private void ExampleGarage_Click(object sender, RoutedEventArgs e) =>
-        LoadExample(PowerSource.PowerStrip,
-            ("DEWALT 4 A waterproof charger/maintainer (DXAEWPC4)", 1),
-            ("BLACK+DECKER 2 A waterproof charger/maintainer (BC2WBD)", 2),
-            ("Heated pet bed", 1));
-
-    private void ExampleWorkshop_Click(object sender, RoutedEventArgs e) =>
-        LoadExample(PowerSource.Circuit15,
-            ("Miter saw", 1),
-            ("Shop vac", 1),
-            ("DEWALT 8 A fast charger (DCB118)", 1),
-            ("LED work light", 1));
-
-    private void ExampleLights_Click(object sender, RoutedEventArgs e)
-    {
-        LightsExpander.IsExpanded = true;
-        LightType.SelectedItem = Core.LightType.All.First(t => t.Name.StartsWith("Incandescent C9"));
-        LightCount.Text = "4";
-        LightFeet.Text = "100";
-        LightsExpander.BringIntoView();
+                             (r.Cord.Recommended is null ? r.Cord.Headline : $"Cord for {feet} ft: {r.Cord.Headline}");
     }
 }

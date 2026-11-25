@@ -118,6 +118,66 @@ public class RuleTests
         Assert.Equal(SourceKind.Adapter, new Gear { Name = "Hub", Type = "Power hub / outlet adapter" }.Kind);
     }
 
+    // ---- Chain: wall outlet -> cords / strips / hubs -> devices ----
+
+    private static readonly ChainLink Hub = new() { Name = "Hub", Kind = SourceKind.Adapter, Amps = 15, Outlets = 5 };
+    private static readonly ChainLink Splitter = new() { Name = "Splitter", Kind = SourceKind.Adapter, Amps = 13, Outlets = 2, Gauge = 16 };
+
+    [Fact]
+    public void Garage_chain_through_the_hub_is_green()
+    {
+        var dewalt = new Device { Name = "DeWalt", Watts = 144, Continuous = true };
+        var bd = new Device { Name = "B+D", Watts = 60, Continuous = true };
+        var r = ChainCheck.Check(15, [Hub], [new(dewalt), new(bd, 2), new(PetBed)]);
+        Assert.Equal(Verdict.Green, r.Verdict);
+        Assert.Equal(2, r.Links.Count); // wall + hub
+    }
+
+    [Fact]
+    public void Four_plugs_on_a_two_outlet_splitter_is_yellow()
+    {
+        var r = ChainCheck.Check(15, [Splitter], [new(Maintainer, 3), new(PetBed)]);
+        Assert.Equal(Verdict.Yellow, r.Verdict);
+        Assert.StartsWith("4 plugs but only 2 outlets", r.Notes[0]);
+        Assert.Contains("more plugs than outlets", r.Headline);
+    }
+
+    [Fact]
+    public void Long_thin_cord_is_the_weak_link()
+    {
+        var cord = ChainLink.ExtensionCord(CordGauge.All.Single(g => g.Awg == 14), 100);
+        var r = ChainCheck.Check(20, [cord], [new(ShopVac)]);
+        Assert.Equal(Verdict.Red, r.Verdict);
+        Assert.Equal(Verdict.Red, r.Links[1].Verdict);
+        Assert.Contains("100 ft 14 gauge", r.Headline);
+    }
+
+    [Fact]
+    public void Strip_plugged_into_a_cord_and_stacked_adapters_get_warnings()
+    {
+        var cord = ChainLink.ExtensionCord(CordGauge.All.Single(g => g.Awg == 12), 25);
+        var r = ChainCheck.Check(15, [cord, ChainLink.GenericStrip(), Hub, Splitter], [new(Maintainer)]);
+        Assert.Contains(r.Notes, n => n.Contains("plugged into an extension cord"));
+        Assert.Contains(r.Notes, n => n.Contains("stacked on another adapter"));
+    }
+
+    [Fact]
+    public void Wall_only_device_through_a_chain_is_red()
+    {
+        var r = ChainCheck.Check(20, [ChainLink.GenericStrip()], [new(Heater)]);
+        Assert.Equal(Verdict.Red, r.Verdict);
+        Assert.StartsWith("Plug the Space heater straight into the wall", r.Headline);
+    }
+
+    [Fact]
+    public void Two_big_saws_overload_even_a_20A_circuit()
+    {
+        var saw = new Device { Name = "Saw", Watts = 1800, Motor = true };
+        var r = ChainCheck.Check(20, [], [new(saw, 2)]);
+        Assert.Equal(Verdict.Red, r.Verdict);
+        Assert.Contains(r.Notes, n => n.Contains("15 A through one ordinary plug"));
+    }
+
     [Fact]
     public void Cord_source_is_capped_at_the_15A_plug()
     {
