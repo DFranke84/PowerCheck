@@ -58,16 +58,18 @@
                                         <TextBox x:Name="QtyBox" Grid.Column="1" Width="40" Margin="6,0"
                                                  Text="1" TextAlignment="Center" VerticalContentAlignment="Center"
                                                  ToolTip="How many"/>
-                                        <Button Grid.Column="2" Content="Add" Click="AddDevice_Click"/>
+                                        <Button Grid.Column="2" Content="Add" Click="AddDevice_Click" ToolTip="Adds it to this check. Nothing is saved."/>
                                     </Grid>
                                     <TextBlock x:Name="DeviceNote" Style="{StaticResource Hint}" Margin="0,6,0,0"/>
                                     <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                                        <Button Content="New device..." Click="NewDevice_Click" Margin="0,0,6,0"/>
-                                        <Button Content="Edit..." Click="EditDevice_Click" Margin="0,0,6,0"/>
+                                        <Button Content="Save a new device..." Click="NewDevice_Click" Margin="0,0,6,0"
+                                                ToolTip="Saves it in your own list (my-devices.json)"/>
+                                        <Button Content="Edit..." Click="EditDevice_Click" Margin="0,0,6,0"
+                                                ToolTip="Changes are saved in your own list; the built-in list is never changed"/>
                                         <Button x:Name="DeleteDeviceButton" Content="Delete" Click="DeleteDevice_Click"/>
                                     </StackPanel>
 
-                                    <TextBlock Text="Or type what the label says:" Margin="0,12,0,4"/>
+                                    <TextBlock Text="Just checking? Type what its label says (for this check only, not saved):" Margin="0,12,0,4" TextWrapping="Wrap"/>
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="70"/>
@@ -83,7 +85,7 @@
                                         </ComboBox>
                                         <CheckBox x:Name="LabelContinuous" Grid.Column="2" Content="Runs for hours"
                                                   VerticalAlignment="Center"/>
-                                        <Button Grid.Column="3" Content="Add" Click="AddLabel_Click"/>
+                                        <Button Grid.Column="3" Content="Add" Click="AddLabel_Click" ToolTip="For this check only. Nothing is saved."/>
                                     </Grid>
                                     <TextBlock Style="{StaticResource Hint}" Margin="0,4,0,0"
                                                Text="Labels show W (watts), A (amps) or VA. Treat VA like watts. Amps × 120 = watts."/>
@@ -298,7 +300,7 @@
                                     </StackPanel>
                                     <TextBlock x:Name="ChainAddNote" Style="{StaticResource Hint}" Margin="0,6,0,0"/>
                                     <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                                        <TextBlock Text="My strips &amp; cords:" Style="{StaticResource Hint}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                        <TextBlock Text="My strips &amp; cords (saved):" Style="{StaticResource Hint}" VerticalAlignment="Center" Margin="0,0,6,0"/>
                                         <Button Content="New..." Click="GearNew_Click" Margin="0,0,6,0" MinWidth="0" Padding="8,2"/>
                                         <Button x:Name="GearEditButton" Content="Edit..." Click="GearEdit_Click" Margin="0,0,6,0" MinWidth="0" Padding="8,2"/>
                                         <Button x:Name="GearDeleteButton" Content="Delete" Click="GearDelete_Click" Margin="0,0,6,0" MinWidth="0" Padding="8,2"/>
@@ -318,10 +320,10 @@
                                         <ComboBox x:Name="LoadPicker" ItemTemplate="{StaticResource DevicePickerItem}"/>
                                         <TextBox x:Name="LoadQty" Grid.Column="1" Width="40" Margin="6,0" Text="1"
                                                  TextAlignment="Center" VerticalContentAlignment="Center" ToolTip="How many"/>
-                                        <Button Grid.Column="2" Content="Add" Click="LoadAdd_Click"/>
+                                        <Button Grid.Column="2" Content="Add" Click="LoadAdd_Click" ToolTip="Adds it to this check. Nothing is saved."/>
                                     </Grid>
 
-                                    <TextBlock Text="Not in the list? Type what its label says:" Margin="0,12,0,4"/>
+                                    <TextBlock Text="Just checking? Type what its label says (for this check only, not saved):" Margin="0,12,0,4" TextWrapping="Wrap"/>
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="70"/>
@@ -336,12 +338,13 @@
                                             <ComboBoxItem Content="VA"/>
                                         </ComboBox>
                                         <CheckBox x:Name="LoadLabelContinuous" Grid.Column="2" Content="Runs for hours" VerticalAlignment="Center"/>
-                                        <Button Grid.Column="3" Content="Add" Click="LoadLabelAdd_Click"/>
+                                        <Button Grid.Column="3" Content="Add" Click="LoadLabelAdd_Click" ToolTip="For this check only. Nothing is saved."/>
                                     </Grid>
                                     <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
                                         <TextBlock Style="{StaticResource Hint}" VerticalAlignment="Center" Margin="0,0,6,0"
-                                                   Text="Use it often? Save it to your list:"/>
-                                        <Button Content="New device..." Click="NewDevice_Click" MinWidth="0" Padding="8,2"/>
+                                                   Text="Use it often?"/>
+                                        <Button Content="Save a new device to my list..." Click="NewDevice_Click" MinWidth="0" Padding="8,2"
+                                                ToolTip="Saves it in your own list (my-devices.json) so it shows in every tab next time"/>
                                     </StackPanel>
 
                                     <ListView x:Name="LoadItems" Margin="0,10,0,0" MinHeight="120" MaxHeight="300" BorderBrush="#D8DCE2">
